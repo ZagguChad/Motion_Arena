@@ -3,81 +3,82 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>⚔️ Tower Siege — Controller</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Push-Up Battle — Controller</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div id="app">
-        <!-- Loading State -->
-        <div id="loadingScreen" class="screen active">
-            <div class="loader-ring"></div>
-            <p class="loader-text">Loading MediaPipe...</p>
-            <p class="loader-sub">Pose detection model</p>
+    <!-- ── LOADING SCREEN ────────────────────────────── -->
+    <div id="loadingScreen" class="screen active">
+        <div class="loader-box">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Initializing...</div>
+            <div class="loader-sub"></div>
         </div>
+    </div>
 
-        <!-- Camera + Game View -->
-        <div id="gameScreen" class="screen">
+    <!-- ── GAME SCREEN ───────────────────────────────── -->
+    <div id="gameScreen" class="screen">
+        <div class="video-wrap">
             <video id="video" autoplay playsinline muted></video>
             <canvas id="overlay"></canvas>
 
-            <!-- HUD -->
-            <div id="hud">
-                <div id="teamBadge" class="badge">CONNECTING...</div>
-                <div id="pushupCount" class="big-count">0</div>
-                <div id="pushupLabel">PUSH-UPS</div>
-                <div id="soldiersCount">⚔ 0 soldiers sent</div>
-                <div id="angleBar">
-                    <div id="angleBarFill"></div>
-                </div>
-                <div id="angleLabel">ARM ANGLE</div>
-                <div id="stateIndicator">—</div>
+            <!-- 3-2-1 countdown overlay -->
+            <div id="countdownOverlay" class="countdown-overlay hidden">
+                <div id="countdownNumber" class="countdown-number">3</div>
             </div>
 
-            <!-- Deploy Mode Badge -->
-            <div id="deployBadge" class="deploy-badge">AUTO</div>
-
-            <!-- Head Direction Indicator (manual mode) -->
-            <div id="headIndicator" class="head-indicator hidden">
-                <div class="head-arrow" id="headArrow">⬆</div>
-                <div class="head-label" id="headLabel">READY</div>
-            </div>
-
-            <!-- No Person Warning -->
+            <!-- No person warning -->
             <div id="noPersonOverlay" class="no-person-overlay hidden">
-                <div class="no-person-icon">👤❌</div>
-                <div class="no-person-text">NO PLAYER DETECTED</div>
-                <div class="no-person-timer" id="noPersonTimer">5</div>
-                <div class="no-person-sub">Return to frame or game ends!</div>
+                <div class="no-person-text">⚠ NO PERSON DETECTED</div>
+                <div class="no-person-timer">Forfeit in <span id="noPersonTimer">5</span>s</div>
             </div>
+        </div>
 
-            <!-- Ready Button -->
-            <button id="readyBtn" class="ready-btn">TAP WHEN READY</button>
-
-            <!-- Deploy Mode Selector (shows before ready) -->
-            <div id="deployModeSelector" class="deploy-mode-selector">
-                <div class="mode-title">DEPLOY MODE</div>
-                <button id="autoModeBtn" class="mode-btn active" data-mode="auto">
-                    🤖 AUTO<br><span class="mode-desc">AI sends troops</span>
-                </button>
-                <button id="manualModeBtn" class="mode-btn" data-mode="manual">
-                    🎯 MANUAL<br><span class="mode-desc">Head aims target</span>
-                </button>
+        <div class="hud">
+            <div id="teamBadge" class="badge">CONNECTING...</div>
+            <div class="stat-row">
+                <div class="stat-box">
+                    <div class="stat-label">PUSH-UPS</div>
+                    <div id="pushupCount" class="stat-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <div id="stateIndicator" class="state-indicator">📐 CALIBRATING</div>
+                </div>
+                <div class="stat-box">
+                    <div id="soldiersCount" class="stat-sub">⚔ 0 soldiers sent</div>
+                </div>
             </div>
-
-            <!-- Game Status -->
+            <div class="angle-bar">
+                <div id="angleBarFill" class="angle-bar-fill"></div>
+            </div>
             <div id="gameStatus" class="game-status hidden"></div>
         </div>
 
-        <!-- Game Over -->
-        <div id="overScreen" class="screen">
-            <div id="overResult"></div>
-            <p id="overStats"></p>
+        <button id="readyBtn" class="ready-btn">⚔ READY</button>
+
+        <!-- Deploy mode selector -->
+        <div id="deployModeSelector" class="deploy-selector">
+            <button id="autoModeBtn" class="mode-btn active">🤖 AUTO</button>
+            <button id="manualModeBtn" class="mode-btn">🎯 MANUAL</button>
+        </div>
+
+        <!-- Head/lean indicator (manual mode) -->
+        <div id="headIndicator" class="head-indicator hidden">
+            <span id="headArrow">⬆</span>
+            <span id="headLabel">LEAN TO AIM</span>
         </div>
     </div>
+
+    <!-- ── GAME OVER SCREEN ──────────────────────────── -->
+    <div id="overScreen" class="screen">
+        <div id="overResult" class="over-result"></div>
+        <div id="overStats" class="over-stats"></div>
+    </div>
+
+    <!-- Deploy badge (floating) -->
+    <div id="deployBadge" class="deploy-badge hidden"></div>
 
     <script type="module" src="controller.js"></script>
 </body>
