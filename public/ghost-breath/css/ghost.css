@@ -54,7 +54,63 @@ canvas#gameCanvas {
     align-items: center;
     justify-content: center;
     z-index: 100;
-    transition: opacity 0.5s;
+    transition: opacity 0.8s ease-out;
+    overflow: hidden;
+}
+
+/* Animated background gradient */
+.waiting-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse 60% 50% at 50% 60%,
+            rgba(100, 68, 170, 0.08) 0%,
+            rgba(60, 30, 120, 0.04) 40%,
+            transparent 70%);
+    animation: ambientPulse 6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Subtle fog wisps */
+.waiting-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background:
+        radial-gradient(ellipse at 20% 80%, rgba(80, 40, 140, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(100, 60, 160, 0.04) 0%, transparent 50%);
+    animation: fogDrift 20s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes ambientPulse {
+
+    0%,
+    100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes fogDrift {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(-50%, -50%);
+    }
 }
 
 .waiting-overlay.hidden {
@@ -67,6 +123,9 @@ canvas#gameCanvas {
     color: var(--ghost-purple);
     letter-spacing: 3px;
     margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(100, 68, 170, 0.4);
+    position: relative;
+    z-index: 2;
 }
 
 .waiting-overlay .subtitle {
@@ -74,15 +133,48 @@ canvas#gameCanvas {
     color: rgba(150, 130, 200, 0.6);
     letter-spacing: 1px;
     margin-bottom: 30px;
+    position: relative;
+    z-index: 2;
 }
 
+/* Ghost emoji pulse */
+.ghost-emoji {
+    font-size: 48px;
+    margin-bottom: 20px;
+    animation: ghostFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 15px rgba(100, 68, 170, 0.4));
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes ghostFloat {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+        filter: drop-shadow(0 0 15px rgba(100, 68, 170, 0.4));
+    }
+
+    50% {
+        transform: translateY(-12px) scale(1.05);
+        filter: drop-shadow(0 0 25px rgba(100, 68, 170, 0.6));
+    }
+}
+
+/* Breathing spinner */
 .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(100, 68, 170, 0.2);
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(100, 68, 170, 0.15);
     border-top: 3px solid var(--ghost-purple);
+    border-right: 3px solid rgba(136, 102, 204, 0.5);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    box-shadow:
+        0 0 15px rgba(100, 68, 170, 0.2),
+        inset 0 0 10px rgba(100, 68, 170, 0.05);
+    position: relative;
+    z-index: 2;
 }
 
 @keyframes spin {
@@ -96,4 +188,19 @@ canvas#gameCanvas {
     font-size: 7px;
     color: rgba(120, 100, 180, 0.5);
     letter-spacing: 1px;
+    position: relative;
+    z-index: 2;
+    animation: breatheText 4s ease-in-out infinite;
+}
+
+@keyframes breatheText {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
 }
