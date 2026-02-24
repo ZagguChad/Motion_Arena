@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost of the Breath Temple | Motion Arena</title>
+    <link rel="stylesheet" href="css/ghost.css">
+</head>
+
+<body>
+    <!-- Waiting Overlay -->
+    <div class="waiting-overlay" id="waiting-overlay">
+        <h1>👻 GHOST OF THE BREATH TEMPLE</h1>
+        <p class="subtitle" id="waiting-status">Waiting for connection...</p>
+        <div class="loading-spinner"></div>
+        <p class="waiting-info">Place phone near nose to play</p>
+    </div>
+
+    <!-- Game Canvas -->
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module">
+        import { Game } from './js/game.js';
+
+        // ─── SOCKET.IO CONNECTION ───
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        const mode = params.get('mode') || '1p';
+
+        const socket = io({
+            transports: ['websocket', 'polling']
+        });
+
+        // ─── GAME INSTANCE ───
+        const canvas = document.getElementById('gameCanvas');
+        const game = new Game(canvas);
+        const waitingStatus = document.getElementById('waiting-status');
+        let gameStarted = false;
+
+        // ─── REJOIN SESSION (laptop navigated from lobby → game page) ───
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (response) => {
+                if (response.error) {
+                    waitingStatus.innerHTML = `<span style="color: #ff4466;">❌ ${response.error}</span>`;
+                    return;
+                }
+
+                console.log('[Ghost Breath] Rejoined session:', response);
+
+                // If game already in progress or player connected, start immediately
+                if (response.state === 'playing') {
+                    startGameUI();
+                } else if (response.players && response.players.length >= 1) {
+                    waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected! Starting...</span>';
+                    setTimeout(() => startGameUI(), 1000);
+                }
+            });
+        } else {
+            // No session — solo/dev mode with keyboard only
+            waitingStatus.innerHTML = '<span style="color: #8866cc;">No session — Keyboard mode (SPACE = breathe)</span>';
+            setTimeout(() => startGameUI(), 1500);
+        }
+
+        // Listen for player joining
+        socket.on('player-joined', (data) => {
+            console.log('[Ghost Breath] Player joined:', data);
+            waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected!</span>';
+        });
+
+        // Listen for game start signal from server
+        socket.on('game-started', () => {
+            console.log('[Ghost Breath] Game started signal received');
+            startGameUI();
+        });
+
+        // Receive breath events from controller
+        socket.on('breath-event', (data) => {
+            game.handleBreathEvent();
+        });
+
+        // Session ended
+        socket.on('session-ended', (data) => {
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        // ─── START GAME (guarded — only runs once) ───
+        function startGameUI() {
+            if (gameStarted) return;
+            gameStarted = true;
+
+            // Tell server the game is now 'playing' so it relays breath events
+            socket.emit('start-game');
+
+            // Hide waiting screen
+            document.getElementById('waiting-overlay').classList.add('hidden');
+
+            // Initialize game engine
+            game.init();
+        }
+    </script>
+</body>
+
+</html>

@@ -8,6 +8,10 @@ const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
 
+// Game Engines
+const { CprEngine } = require('./engines/cpr-engine');
+const { TowerSiegeEngine } = require('./engines/tower-siege-engine');
+
 const app = express();
 
 // === IP DETECTION ===
@@ -185,7 +189,16 @@ app.get('/api/qr/:sessionId', async (req, res) => {
     const ip = req.query.ip || getLocalIP();
     const port = httpsServer ? HTTPS_PORT : PORT;
     const protocol = httpsServer ? 'https' : 'http';
-    const url = `${protocol}://${ip}:${port}/controller.html?session=${req.params.sessionId}`;
+    const gameName = req.query.game || '';
+
+    // Route CPR Trainer and Tower Siege to their dedicated controller pages
+    const controllerMap = {
+        'cpr-trainer': '/cpr-trainer/controller.html',
+        'tower-siege': '/tower-siege/controller.html'
+    };
+    const controllerPath = controllerMap[gameName] || '/controller.html';
+
+    const url = `${protocol}://${ip}:${port}${controllerPath}?session=${req.params.sessionId}`;
     try {
         const qrDataUrl = await QRCode.toDataURL(url, {
             width: 400,
@@ -258,7 +271,9 @@ function socketHandler(socket) {
             playerNum, totalPlayers: session.players.length, mode: session.mode
         });
 
-        if (callback) callback({ playerNum, game: session.game, mode: session.mode });
+        // Assign team for Tower Siege (player 1 = blue, player 2 = red)
+        const team = playerNum === 1 ? 'blue' : 'red';
+        if (callback) callback({ playerNum, game: session.game, mode: session.mode, team });
 
         if (session.players.length >= session.maxPlayers) {
             session.state = 'ready';
@@ -276,16 +291,113 @@ function socketHandler(socket) {
         });
     });
 
-    // Shadow Breath: relay tilt (gyroscope) data
-    socket.on('tilt', (data) => {
+    // Ghost of the Breath Temple: relay breath events from controller to game
+    socket.on('breath-event', (data) => {
         const session = sessions[socket.sessionId];
         if (!session || session.state !== 'playing') return;
-        broadcastToSession(socket.sessionId, 'tilt', {
+        broadcastToSession(socket.sessionId, 'breath-event', {
             playerNum: socket.playerNum,
-            x: data.x,
-            y: data.y
+            timestamp: Date.now()
         });
     });
+
+    // ═══════════════════════════════════════════════════════════
+    //  CPR TRAINER — Socket.IO Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    // Compression data from the mobile controller
+    socket.on('cpr-compression', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'cpr-trainer') return;
+        session.gameEngine.processCompression(data);
+    });
+
+    // Simulated compression from keyboard (Space bar on game display)
+    socket.on('cpr-sim-compression', () => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'cpr-trainer') return;
+        // Simulate a decent compression for keyboard testing
+        session.gameEngine.processCompression({
+            depth: 5.0 + Math.random() * 1.0,
+            recoil: 0.85 + Math.random() * 0.15
+        });
+    });
+
+    // Player ready signal for CPR
+    socket.on('cpr-player-ready', () => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'cpr-trainer') return;
+        session.gameEngine.playerReady = true;
+        session.gameEngine.playerConnected = true;
+        // Auto-start countdown when player is ready
+        session.gameEngine.startCountdown();
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  TOWER SIEGE — Socket.IO Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    // Push-up count update from controller
+    socket.on('ts-pushup', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'tower-siege') return;
+        const team = socket.playerNum === 1 ? 'blue' : 'red';
+        session.gameEngine.addSoldiersFromPushup(team, data.count);
+    });
+
+    // Deploy mode toggle from controller
+    socket.on('ts-deploy-mode', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'tower-siege') return;
+        const team = socket.playerNum === 1 ? 'blue' : 'red';
+        session.gameEngine.players[team].deployMode = data.mode || 'auto';
+        console.log(`[TS:${socket.sessionId}] ${team} deploy mode: ${data.mode}`);
+    });
+
+    // Head direction for manual deploy
+    socket.on('ts-head-direction', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'tower-siege') return;
+        const team = socket.playerNum === 1 ? 'blue' : 'red';
+        session.gameEngine.players[team].headDirection = data.direction || 'center';
+    });
+
+    // Manual deploy trigger
+    socket.on('ts-manual-deploy', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'tower-siege') return;
+        const team = socket.playerNum === 1 ? 'blue' : 'red';
+        session.gameEngine.manualDeploy(team, data.direction);
+    });
+
+    // Player ready signal for Tower Siege
+    socket.on('ts-player-ready', () => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'tower-siege') return;
+        const team = socket.playerNum === 1 ? 'blue' : 'red';
+        session.gameEngine.players[team].ready = true;
+        console.log(`[TS:${socket.sessionId}] ${team} player ready`);
+
+        // Check if we should start
+        const engine = session.gameEngine;
+        const blueReady = engine.players.blue.ready;
+        const redReady = engine.mode === 'ai' ? true : engine.players.red.ready;
+        if (blueReady && redReady && engine.phase === 'lobby') {
+            engine.startCountdown();
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  GENERIC — Start Game (creates game engine)
+    // ═══════════════════════════════════════════════════════════
 
     socket.on('start-game', () => {
         const session = sessions[socket.sessionId];
@@ -293,6 +405,19 @@ function socketHandler(socket) {
         session.state = 'playing';
         broadcastToSession(socket.sessionId, 'game-started', { game: session.game, mode: session.mode });
         console.log(`[Session] Game started: ${socket.sessionId} (${session.mode})`);
+
+        // Create game engine based on game type
+        if (session.game === 'cpr-trainer' && !session.gameEngine) {
+            session.gameEngine = new CprEngine(socket.sessionId, broadcastToSession);
+            session.gameEngine.playerConnected = true;
+            console.log(`[Session] CPR Trainer engine created for ${socket.sessionId}`);
+        }
+
+        if (session.game === 'tower-siege' && !session.gameEngine) {
+            const tsMode = session.mode === '1p' ? 'ai' : 'pvp';
+            session.gameEngine = new TowerSiegeEngine(socket.sessionId, tsMode, broadcastToSession);
+            console.log(`[Session] Tower Siege engine created for ${socket.sessionId} (${tsMode})`);
+        }
     });
 
     // Laptop reconnection (when navigating from lobby → game page)
@@ -347,6 +472,10 @@ function socketHandler(socket) {
                 // Only destroy if laptop hasn't reconnected
                 if (sessions[socket.sessionId] && sessions[socket.sessionId].laptop === socket.id) {
                     console.log(`[Session] Laptop did not reconnect — destroying session ${socket.sessionId}`);
+                    // Destroy game engine if it exists
+                    if (session.gameEngine && typeof session.gameEngine.destroy === 'function') {
+                        session.gameEngine.destroy();
+                    }
                     broadcastToSession(socket.sessionId, 'session-ended', { reason: 'Host disconnected' });
                     delete sessions[socket.sessionId];
                 }

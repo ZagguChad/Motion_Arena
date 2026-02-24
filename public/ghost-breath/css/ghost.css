@@ -1,0 +1,99 @@
+/* ============================================
+   Ghost of the Breath Temple — Game Styles
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+    --ghost-purple: #6644aa;
+    --ghost-glow: #8866cc;
+    --ghost-dark: #0a0814;
+    --flame-orange: #ffa032;
+    --hit-green: #44ff88;
+    --miss-red: #ff4466;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--ghost-dark);
+    color: #ccc;
+    font-family: 'Press Start 2P', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+.game-container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+canvas#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ─── WAITING OVERLAY ─── */
+.waiting-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--ghost-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.5s;
+}
+
+.waiting-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.waiting-overlay h1 {
+    font-size: 14px;
+    color: var(--ghost-purple);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+}
+
+.waiting-overlay .subtitle {
+    font-size: 8px;
+    color: rgba(150, 130, 200, 0.6);
+    letter-spacing: 1px;
+    margin-bottom: 30px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(100, 68, 170, 0.2);
+    border-top: 3px solid var(--ghost-purple);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.waiting-info {
+    margin-top: 20px;
+    font-size: 7px;
+    color: rgba(120, 100, 180, 0.5);
+    letter-spacing: 1px;
+}

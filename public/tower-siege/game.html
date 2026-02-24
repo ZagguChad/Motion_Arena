@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Siege — Push-Up Powered Warfare | Motion Arena</title>
+    <meta name="description"
+        content="Capture towers by doing push-ups! A real-time strategy game powered by body movement.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Waiting Overlay -->
+    <div class="waiting-overlay" id="waiting-overlay">
+        <h1>⚔ TOWER SIEGE ⚔</h1>
+        <p class="subtitle" id="waiting-status">Waiting for connection...</p>
+        <div class="loading-spinner"></div>
+        <p class="waiting-info">Push-ups power your army!</p>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="sprites.js"></script>
+    <script src="story.js"></script>
+    <script src="game.js"></script>
+    <script>
+        // ─── SOCKET.IO CONNECTION ───
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        const mode = params.get('mode') || '1p';
+
+        const socket = io({
+            transports: ['websocket', 'polling']
+        });
+
+        const waitingStatus = document.getElementById('waiting-status');
+        let tsGameStarted = false;
+
+        // ─── REJOIN SESSION (laptop navigated from lobby → game page) ───
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (response) => {
+                if (response.error) {
+                    waitingStatus.innerHTML = `<span style="color: #ff4466;">❌ ${response.error}</span>`;
+                    return;
+                }
+
+                console.log('[Tower Siege] Rejoined session:', response);
+
+                if (response.state === 'playing') {
+                    startGameUI();
+                } else if (response.players && response.players.length >= 1) {
+                    waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected! Starting...</span>';
+                    setTimeout(() => startGameUI(), 1000);
+                }
+            });
+        } else {
+            waitingStatus.innerHTML = '<span style="color: #f5c542;">No session — Demo mode</span>';
+            setTimeout(() => startGameUI(), 1500);
+        }
+
+        // Listen for player joining
+        socket.on('player-joined', (data) => {
+            console.log('[Tower Siege] Player joined:', data);
+            waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected!</span>';
+        });
+
+        // Listen for game start signal from server
+        socket.on('game-started', () => {
+            console.log('[Tower Siege] Game started signal received');
+            startGameUI();
+        });
+
+        // Receive Tower Siege game state from server engine
+        socket.on('ts-game-state', (data) => {
+            if (typeof updateGameState === 'function') {
+                updateGameState(data);
+            }
+        });
+
+        // Session ended
+        socket.on('session-ended', (data) => {
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        // ─── START GAME (guarded — only runs once) ───
+        function startGameUI() {
+            if (tsGameStarted) return;
+            tsGameStarted = true;
+
+            // Tell server the game is now 'playing'
+            socket.emit('start-game');
+
+            // Hide waiting screen — game canvas takes over
+            document.getElementById('waiting-overlay').classList.add('hidden');
+
+            // Skip intro cutscene — go straight to gameplay
+            // (intro/modeselect handled by Motion Arena lobby)
+            if (typeof setGamePhase === 'function') {
+                setGamePhase('playing');
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPR Trainer — Learn to Save a Life | Motion Arena</title>
+    <meta name="description"
+        content="Interactive CPR training game using phone sensors. Learn proper chest compression technique through real-time feedback.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Waiting Overlay -->
+    <div class="waiting-overlay" id="waiting-overlay">
+        <h1>❤️ CPR TRAINER</h1>
+        <p class="subtitle" id="waiting-status">Waiting for connection...</p>
+        <div class="loading-spinner"></div>
+        <p class="waiting-info">Place phone face-down on a pillow to play</p>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+    <script>
+        // ─── SOCKET.IO CONNECTION ───
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        const mode = params.get('mode') || '1p';
+
+        const socket = io({
+            transports: ['websocket', 'polling']
+        });
+
+        const waitingStatus = document.getElementById('waiting-status');
+        let gameStarted = false;
+
+        // ─── REJOIN SESSION (laptop navigated from lobby → game page) ───
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (response) => {
+                if (response.error) {
+                    waitingStatus.innerHTML = `<span style="color: #ff4466;">❌ ${response.error}</span>`;
+                    return;
+                }
+
+                console.log('[CPR Trainer] Rejoined session:', response);
+
+                if (response.state === 'playing') {
+                    startGameUI();
+                } else if (response.players && response.players.length >= 1) {
+                    waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected! Starting...</span>';
+                    setTimeout(() => startGameUI(), 1000);
+                }
+            });
+        } else {
+            // No session — solo/dev mode with keyboard only
+            waitingStatus.innerHTML = '<span style="color: #e74c6f;">No session — Keyboard mode (SPACE = compress)</span>';
+            setTimeout(() => startGameUI(), 1500);
+        }
+
+        // Listen for player joining
+        socket.on('player-joined', (data) => {
+            console.log('[CPR Trainer] Player joined:', data);
+            waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected!</span>';
+        });
+
+        // Listen for game start signal from server
+        socket.on('game-started', () => {
+            console.log('[CPR Trainer] Game started signal received');
+            startGameUI();
+        });
+
+        // Receive CPR game state from server engine
+        socket.on('cpr-game-state', (data) => {
+            // Update the global state variable used by game.js rendering
+            if (typeof updateGameState === 'function') {
+                updateGameState(data);
+            }
+        });
+
+        // Session ended
+        socket.on('session-ended', (data) => {
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        // ─── START GAME (guarded — only runs once) ───
+        function startGameUI() {
+            if (gameStarted) return;
+            gameStarted = true;
+
+            // Tell server the game is now 'playing'
+            socket.emit('start-game');
+
+            // Hide waiting screen
+            document.getElementById('waiting-overlay').classList.add('hidden');
+        }
+
+        // ─── KEYBOARD: Spacebar → simulate compression ───
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                socket.emit('cpr-sim-compression');
+            }
+        });
+    </script>
+</body>
+
+</html>

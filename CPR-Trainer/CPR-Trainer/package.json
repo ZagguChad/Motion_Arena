@@ -1,0 +1,23 @@
+{
+  "name": "cpr-trainer",
+  "version": "1.0.0",
+  "description": "Interactive CPR Training Game — Phone Sensor-Based Compression Detection + WebSocket + Canvas Game Display",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
+  },
+  "keywords": [
+    "cpr",
+    "accelerometer",
+    "websocket",
+    "game",
+    "training"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "selfsigned": "^5.5.0",
+    "ws": "^8.18.0"
+  }
+}

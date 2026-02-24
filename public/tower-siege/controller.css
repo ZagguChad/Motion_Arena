@@ -1,0 +1,480 @@
+/* ── Tower Siege — Mobile Controller Styles ── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0a0a1a;
+    font-family: 'Press Start 2P', monospace;
+    color: #e6edf3;
+    user-select: none;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Loading Screen ── */
+#loadingScreen {
+    background: #0d1117;
+}
+
+.loader-ring {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(230, 237, 243, 0.1);
+    border-top-color: #f5c542;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loader-text {
+    margin-top: 20px;
+    font-size: 10px;
+    color: #f5c542;
+}
+
+.loader-sub {
+    margin-top: 8px;
+    font-size: 7px;
+    color: rgba(230, 237, 243, 0.4);
+}
+
+/* ── Game Screen ── */
+#gameScreen {
+    display: none;
+    position: relative;
+}
+
+#gameScreen.active {
+    display: block;
+}
+
+#video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* ── HUD ── */
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    background: linear-gradient(180deg, rgba(13, 17, 23, 0.85) 0%, transparent 100%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    border: 2px solid;
+}
+
+.badge.blue {
+    background: rgba(67, 97, 238, 0.2);
+    border-color: #4361ee;
+    color: #4361ee;
+}
+
+.badge.red {
+    background: rgba(239, 35, 60, 0.2);
+    border-color: #ef233c;
+    color: #ef233c;
+}
+
+.big-count {
+    font-size: 48px;
+    font-weight: bold;
+    color: #f5c542;
+    text-shadow: 0 0 20px rgba(245, 197, 66, 0.5);
+    line-height: 1;
+}
+
+#pushupLabel {
+    font-size: 8px;
+    color: rgba(230, 237, 243, 0.5);
+    margin-top: 4px;
+    letter-spacing: 2px;
+}
+
+#soldiersCount {
+    font-size: 9px;
+    color: #2ea043;
+    margin-top: 8px;
+}
+
+#angleBar {
+    width: 80%;
+    max-width: 250px;
+    height: 10px;
+    background: rgba(230, 237, 243, 0.1);
+    border-radius: 5px;
+    margin: 10px auto 4px;
+    overflow: hidden;
+}
+
+#angleBarFill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2ea043, #f5c542, #ef233c);
+    border-radius: 5px;
+    transition: width 0.1s ease;
+}
+
+#angleLabel {
+    font-size: 6px;
+    color: rgba(230, 237, 243, 0.3);
+    letter-spacing: 1px;
+}
+
+#stateIndicator {
+    font-size: 12px;
+    margin-top: 8px;
+    color: #2ea043;
+    text-transform: uppercase;
+}
+
+/* ── Ready Button ── */
+.ready-btn {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 16px 32px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    background: linear-gradient(135deg, #2ea043, #1a7f37);
+    color: white;
+    border: 3px solid #3fb950;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 20;
+    animation: pulse-btn 1.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
+}
+
+.ready-btn:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+.ready-btn.hidden {
+    display: none;
+}
+
+@keyframes pulse-btn {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(46, 160, 67, 0.6);
+    }
+}
+
+/* ── Game Status ── */
+.game-status {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 20px;
+    font-size: 8px;
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid rgba(230, 237, 243, 0.1);
+    border-radius: 4px;
+    z-index: 15;
+    white-space: nowrap;
+}
+
+.game-status.hidden {
+    display: none;
+}
+
+/* ── Game Over ── */
+#overScreen {
+    background: #0d1117;
+    text-align: center;
+}
+
+#overResult {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+#overStats {
+    font-size: 8px;
+    color: rgba(230, 237, 243, 0.5);
+    line-height: 1.8;
+}
+
+/* ── Flashes ── */
+.pushup-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 100;
+    animation: flash 0.3s ease-out forwards;
+}
+
+@keyframes flash {
+    0% {
+        background: rgba(46, 160, 67, 0.3);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+/* ── Deploy Mode Selector ── */
+.deploy-mode-selector {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+}
+
+.mode-title {
+    font-size: 7px;
+    color: rgba(230, 237, 243, 0.5);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.mode-btn {
+    display: block;
+    width: 200px;
+    padding: 10px 16px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    background: rgba(30, 35, 50, 0.8);
+    color: rgba(230, 237, 243, 0.6);
+    border: 2px solid rgba(230, 237, 243, 0.15);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.mode-btn .mode-desc {
+    font-size: 6px;
+    color: rgba(230, 237, 243, 0.35);
+}
+
+.mode-btn.active {
+    background: rgba(46, 160, 67, 0.2);
+    border-color: #3fb950;
+    color: #3fb950;
+}
+
+.mode-btn.active .mode-desc {
+    color: rgba(63, 185, 80, 0.6);
+}
+
+.deploy-mode-selector.hidden {
+    display: none;
+}
+
+/* ── Deploy Badge (in-game) ── */
+.deploy-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    border-radius: 4px;
+    z-index: 15;
+    background: rgba(46, 160, 67, 0.2);
+    border: 1px solid #3fb950;
+    color: #3fb950;
+    pointer-events: none;
+}
+
+.deploy-badge.manual {
+    background: rgba(245, 197, 66, 0.2);
+    border-color: #f5c542;
+    color: #f5c542;
+}
+
+/* ── Head Direction Indicator ── */
+.head-indicator {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 15;
+    pointer-events: none;
+}
+
+.head-indicator.hidden {
+    display: none;
+}
+
+.head-arrow {
+    font-size: 32px;
+    transition: transform 0.15s ease;
+    text-shadow: 0 0 12px rgba(245, 197, 66, 0.8);
+}
+
+.head-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #f5c542;
+    margin-top: 4px;
+    letter-spacing: 1px;
+}
+
+/* ── No Person Warning ── */
+.no-person-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 10, 26, 0.88);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    animation: fadeIn 0.3s ease;
+}
+
+.no-person-overlay.hidden {
+    display: none;
+}
+
+.no-person-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.no-person-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: #ef233c;
+    margin-bottom: 16px;
+    text-shadow: 0 0 10px rgba(239, 35, 60, 0.5);
+}
+
+.no-person-timer {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 48px;
+    color: #f5c542;
+    text-shadow: 0 0 20px rgba(245, 197, 66, 0.6);
+    animation: pulse-timer 1s ease-in-out infinite;
+}
+
+.no-person-sub {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: rgba(230, 237, 243, 0.4);
+    margin-top: 16px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-timer {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+/* ── Target Flash (manual confirm) ── */
+.target-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 100;
+    animation: targetFlash 0.4s ease-out forwards;
+}
+
+@keyframes targetFlash {
+    0% {
+        background: rgba(245, 197, 66, 0.4);
+    }
+
+    100% {
+        background: transparent;
+    }
+}

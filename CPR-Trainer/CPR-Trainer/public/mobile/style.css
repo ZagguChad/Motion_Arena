@@ -1,0 +1,429 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: #e0e0f0;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ── Screens ────────────────────────────────────────────── */
+.screen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* ── Loading Screen ─────────────────────────────────────── */
+.loader-container {
+    text-align: center;
+}
+
+.heart-loader {
+    font-size: 60px;
+    animation: heartbeat 1.2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    14% {
+        transform: scale(1.25);
+    }
+
+    28% {
+        transform: scale(1);
+    }
+
+    42% {
+        transform: scale(1.20);
+    }
+
+    56% {
+        transform: scale(1);
+    }
+}
+
+.loader-text {
+    font-size: 28px;
+    font-weight: 900;
+    color: #e74c6f;
+    margin-top: 16px;
+}
+
+.loader-sub {
+    font-size: 14px;
+    color: #8888aa;
+    margin-top: 8px;
+}
+
+/* ── Setup Screen ───────────────────────────────────────── */
+.setup-container {
+    text-align: center;
+    max-width: 340px;
+}
+
+.setup-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+.setup-container h2 {
+    font-size: 24px;
+    font-weight: 900;
+    color: #e74c6f;
+    margin-bottom: 10px;
+}
+
+.setup-container p {
+    font-size: 15px;
+    color: #8888aa;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.setup-steps {
+    text-align: left;
+    margin-bottom: 30px;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: rgba(20, 20, 35, 0.85);
+    border: 1px solid rgba(100, 100, 255, 0.1);
+    border-radius: 12px;
+    font-size: 14px;
+    color: #c0c0d0;
+}
+
+.step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e74c6f, #ff6b8a);
+    color: white;
+    font-weight: 900;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.btn-ready {
+    width: 100%;
+    padding: 18px 24px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #e74c6f, #ff4d7a);
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(231, 76, 111, 0.4);
+}
+
+.btn-ready:active {
+    transform: scale(0.97);
+}
+
+/* ── Game Screen ────────────────────────────────────────── */
+#gameScreen {
+    background: linear-gradient(180deg, #0f0f1a, #0a0a0f);
+    justify-content: space-between;
+    padding: 15px 20px;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.timer {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #e0e0f0;
+}
+
+.compression-count {
+    font-size: 36px;
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    color: #e74c6f;
+}
+
+.feedback-zone {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.feedback-text {
+    font-size: 32px;
+    font-weight: 900;
+    text-align: center;
+    transition: color 0.2s;
+    text-shadow: 0 0 30px currentColor;
+}
+
+.feedback-text.perfect {
+    color: #4ade80;
+}
+
+.feedback-text.good {
+    color: #60a5fa;
+}
+
+.feedback-text.warning {
+    color: #fbbf24;
+}
+
+.feedback-text.bad {
+    color: #ef4444;
+}
+
+.bpm-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.bpm-value {
+    font-size: 56px;
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    color: #e74c6f;
+}
+
+.bpm-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #8888aa;
+}
+
+.depth-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.depth-bar {
+    flex: 1;
+    height: 28px;
+    background: #1e1e30;
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.depth-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #e74c6f, #ff4d7a);
+    transition: width 0.15s ease-out, background 0.2s;
+    width: 0;
+}
+
+.depth-zone {
+    position: absolute;
+    top: 0;
+    left: 62.5%;
+    /* 5cm / 8cm = 62.5% */
+    width: 12.5%;
+    /* (6-5)/8 = 12.5% */
+    height: 100%;
+    border-left: 2px solid rgba(34, 197, 94, 0.5);
+    border-right: 2px solid rgba(34, 197, 94, 0.5);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.depth-value {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #8888aa;
+    min-width: 60px;
+    text-align: right;
+}
+
+.metronome-toggle {
+    width: 100%;
+    text-align: center;
+}
+
+.btn-metronome {
+    padding: 10px 24px;
+    border: 1px solid rgba(100, 100, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(20, 20, 35, 0.85);
+    color: #8888aa;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+}
+
+.btn-metronome.active {
+    background: rgba(231, 76, 111, 0.2);
+    color: #e74c6f;
+    border-color: rgba(231, 76, 111, 0.4);
+}
+
+/* ── Game Over Screen ───────────────────────────────────── */
+.over-container {
+    text-align: center;
+    max-width: 360px;
+    overflow-y: auto;
+    max-height: 100%;
+    padding: 20px 0;
+}
+
+.over-grade {
+    font-size: 100px;
+    font-weight: 900;
+    color: #e74c6f;
+    text-shadow: 0 0 40px currentColor;
+    line-height: 1;
+}
+
+.over-score {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #e0e0f0;
+    margin: 10px 0 20px;
+}
+
+.over-stats {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.over-stats .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 16px;
+    margin-bottom: 4px;
+    background: rgba(20, 20, 35, 0.85);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.over-stats .stat-label {
+    color: #8888aa;
+}
+
+.over-stats .stat-value {
+    color: #e0e0f0;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.over-tips {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.over-tips .tip {
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    background: rgba(231, 76, 111, 0.08);
+    border-left: 3px solid #e74c6f;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    color: #c0c0d0;
+    line-height: 1.4;
+}
+
+.btn-retry {
+    width: 100%;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #e74c6f, #ff4d7a);
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(231, 76, 111, 0.4);
+}
+
+/* ── Compression Flash ──────────────────────────────────── */
+.compression-flash {
+    position: fixed;
+    inset: 0;
+    background: rgba(231, 76, 111, 0.15);
+    pointer-events: none;
+    animation: flashAnim 0.2s ease-out forwards;
+    z-index: 100;
+}
+
+.compression-flash.perfect {
+    background: rgba(74, 222, 128, 0.2);
+}
+
+@keyframes flashAnim {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}

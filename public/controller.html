@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Motion Arena — Controller</title>
+    <title>Motion Arena â€” Controller</title>
     <link rel="stylesheet" href="css/common.css">
     <style>
         html,
@@ -334,8 +334,8 @@
             color: var(--text-secondary);
         }
 
-        /* === SHADOW BREATH CONTROLLER === */
-        .breath-controller {
+        /* === GHOST BREATH CONTROLLER === */
+        .ghost-controller {
             display: none;
             flex-direction: column;
             height: 100vh;
@@ -344,80 +344,72 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            background: linear-gradient(180deg, #0a0814, #120a20);
         }
 
-        .breath-controller.visible {
+        .ghost-controller.visible {
             display: flex;
         }
 
-        .breath-header h1 {
+        .ghost-header h1 {
             font-family: var(--font-retro);
-            font-size: 0.7rem;
-            color: #4477ff;
+            font-size: 0.65rem;
+            color: #8866cc;
             letter-spacing: 2px;
             margin-bottom: 8px;
         }
 
-        .breath-header .game-badge {
+        .ghost-header .game-badge {
             display: inline-block;
             padding: 4px 14px;
-            background: rgba(68, 119, 255, 0.1);
-            border: 1px solid rgba(68, 119, 255, 0.3);
+            background: rgba(100, 68, 170, 0.1);
+            border: 1px solid rgba(100, 68, 170, 0.3);
             border-radius: 20px;
             font-family: var(--font-retro);
             font-size: 0.5rem;
-            color: #4477ff;
+            color: #8866cc;
             letter-spacing: 1px;
             margin-bottom: 20px;
         }
 
-        .breath-circle {
+        .ghost-breath-circle {
             width: 180px;
             height: 180px;
             border-radius: 50%;
-            border: 3px solid rgba(68, 119, 255, 0.3);
+            border: 3px solid rgba(100, 68, 170, 0.3);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             margin: 16px 0;
-            transition: all 0.2s;
-            background: rgba(68, 119, 255, 0.05);
+            transition: all 0.3s;
+            background: rgba(100, 68, 170, 0.05);
         }
 
-        .breath-circle.holding {
+        .ghost-breath-circle.active {
             border-color: #44ff88;
-            background: rgba(68, 255, 136, 0.1);
-            box-shadow: 0 0 40px rgba(68, 255, 136, 0.2);
-            transform: scale(0.9);
+            background: rgba(68, 255, 136, 0.08);
+            box-shadow: 0 0 40px rgba(68, 255, 136, 0.15);
+            transform: scale(1.05);
         }
 
-        .breath-circle.breathing {
-            border-color: #ff6644;
-            background: rgba(255, 102, 68, 0.08);
-        }
-
-        .breath-circle .breath-icon {
+        .ghost-breath-circle .ghost-breath-icon {
             font-size: 3rem;
             margin-bottom: 8px;
         }
 
-        .breath-circle .breath-label {
+        .ghost-breath-circle .ghost-breath-label {
             font-family: var(--font-retro);
-            font-size: 0.6rem;
-            color: #4477ff;
+            font-size: 0.55rem;
+            color: #8866cc;
             letter-spacing: 2px;
         }
 
-        .breath-circle.holding .breath-label {
+        .ghost-breath-circle.active .ghost-breath-label {
             color: #44ff88;
         }
 
-        .breath-circle.breathing .breath-label {
-            color: #ff6644;
-        }
-
-        .lung-bar-wrap {
+        .ghost-mic-bar {
             width: 80%;
             max-width: 260px;
             height: 14px;
@@ -425,49 +417,29 @@
             border-radius: 7px;
             overflow: hidden;
             margin: 12px 0;
-            border: 1px solid var(--border-subtle);
+            border: 1px solid rgba(100, 68, 170, 0.2);
         }
 
-        .lung-bar-fill {
+        .ghost-mic-bar-fill {
             height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #4477ff, #66aaff);
+            width: 0%;
+            background: linear-gradient(90deg, #6644aa, #8866cc);
             border-radius: 7px;
-            transition: width 0.15s;
+            transition: width 0.1s;
         }
 
-        .breath-actions {
-            display: flex;
-            gap: 16px;
-            margin-top: 16px;
+        .ghost-mic-bar-fill.active {
+            background: linear-gradient(90deg, #44ff88, #66ffaa);
         }
 
-        .breath-action-btn {
-            padding: 14px 24px;
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(68, 119, 255, 0.3);
-            background: rgba(68, 119, 255, 0.08);
-            color: #aaccff;
-            font-family: var(--font-retro);
-            font-size: 0.55rem;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .breath-action-btn:active {
-            background: rgba(68, 119, 255, 0.2);
-            transform: scale(0.95);
-        }
-
-        .tilt-hint {
+        .ghost-hint {
             font-size: 0.75rem;
-            color: var(--text-muted);
+            color: rgba(140, 120, 180, 0.6);
             margin-top: 12px;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
-        .breath-status-bar {
+        .ghost-status-bar {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -476,12 +448,12 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 20px;
-            background: rgba(10, 10, 15, 0.8);
-            border-top: 1px solid var(--border-subtle);
+            background: rgba(10, 8, 20, 0.9);
+            border-top: 1px solid rgba(100, 68, 170, 0.15);
             font-size: 0.75rem;
         }
 
-        .breath-status-bar .connection {
+        .ghost-status-bar .connection {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -501,12 +473,12 @@
 
     <!-- Waiting for Game Start -->
     <div class="waiting-overlay" id="waiting-overlay">
-        <h2>✅ CONNECTED!</h2>
+        <h2>âœ… CONNECTED!</h2>
         <p>Waiting for the host to start the game...</p>
         <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.8rem;">Keep this screen open</p>
     </div>
 
-    <!-- Main Controller (Gesture Mode — for rest-mode games) -->
+    <!-- Main Controller (Gesture Mode â€” for rest-mode games) -->
     <div class="controller" id="controller" style="display: none;">
         <div class="ctrl-header">
             <h1>MOTION ARENA</h1>
@@ -517,7 +489,7 @@
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas-overlay"></canvas>
             <div class="gesture-display">
-                <div class="gesture-icon" id="gesture-icon">✋</div>
+                <div class="gesture-icon" id="gesture-icon">âœ‹</div>
                 <div class="gesture-name" id="gesture-name">READY</div>
             </div>
         </div>
@@ -531,15 +503,15 @@
         </div>
     </div>
 
-    <!-- Motion Controller (Body Movement Mode — for active-mode games like Dino Dash) -->
+    <!-- Motion Controller (Body Movement Mode â€” for active-mode games like Dino Dash) -->
     <div class="motion-controller" id="motion-controller">
         <div class="motion-header">
-            <h1>⚔️ KNIGHT DASH</h1>
+            <h1>âš”ï¸ KNIGHT DASH</h1>
             <div class="game-badge">BODY MOTION</div>
         </div>
 
         <div class="jump-zone" id="jump-zone">
-            <div class="jump-icon" id="jump-icon">🦘</div>
+            <div class="jump-icon" id="jump-icon">ðŸ¦˜</div>
             <div class="jump-label" id="jump-label">JUMP!</div>
         </div>
 
@@ -559,47 +531,83 @@
         </div>
     </div>
 
-    <!-- Shadow Breath Controller (Breath + Tilt Mode) -->
-    <div class="breath-controller" id="breath-controller">
-        <div class="breath-header">
-            <h1>🗡️ SHADOW BREATH</h1>
-            <div class="game-badge">BREATH + TILT</div>
+    <!-- Ghost of the Breath Temple Controller (Mic-only Mode) -->
+    <div class="ghost-controller" id="ghost-controller">
+        <div class="ghost-header">
+            <h1>ðŸ‘» GHOST OF THE BREATH TEMPLE</h1>
+            <div class="game-badge">ðŸŽ¤ MIC ONLY</div>
         </div>
 
-        <div class="breath-circle" id="breath-circle">
-            <div class="breath-icon" id="breath-icon">🫁</div>
-            <div class="breath-label" id="breath-label">BREATHE NORMALLY</div>
+        <div class="ghost-breath-circle" id="ghost-breath-circle">
+            <div class="ghost-breath-icon" id="ghost-breath-icon">ðŸŽ¤</div>
+            <div class="ghost-breath-label" id="ghost-breath-label">INITIALIZING...</div>
         </div>
 
-        <div class="lung-bar-wrap">
-            <div class="lung-bar-fill" id="lung-bar-fill"></div>
+        <div class="ghost-mic-bar">
+            <div class="ghost-mic-bar-fill" id="ghost-mic-fill"></div>
         </div>
 
-        <p class="tilt-hint">Tilt phone to move 🎮<br>Stay silent to go invisible 👻</p>
+        <p class="ghost-hint">Place phone near your nose<br>Breathe to send rhythm events ðŸ«</p>
 
-        <div class="breath-actions">
-            <button class="breath-action-btn" id="interact-btn" ontouchstart="sendInteract()"
-                onclick="sendInteract()">🚪 INTERACT</button>
-            <button class="breath-action-btn" id="dash-btn" ontouchstart="sendDash()" onclick="sendDash()">💨
-                DASH</button>
-        </div>
-
-        <div class="breath-status-bar">
+        <div class="ghost-status-bar">
             <div class="connection">
-                <span class="status-dot connected" id="breath-status-dot"></span>
-                <span id="breath-conn-text">Connected</span>
+                <span class="status-dot connected" id="ghost-status-dot"></span>
+                <span id="ghost-conn-text">Connected</span>
             </div>
-            <span id="breath-mic-level" style="color: var(--text-muted);">MIC: --</span>
+            <span id="ghost-mic-level" style="color: rgba(140,120,180,0.5);">MIC: --</span>
         </div>
     </div>
+
+
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"></script>
     <script>
-        const socket = io();
+        const socket = io({
+            transports: ['polling', 'websocket'],  // polling first (more reliable on mobile HTTPS with self-signed certs)
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            timeout: 10000
+        });
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session');
+
+        // Connection status feedback on connecting screen
+        const connectMsg = document.getElementById('connect-message');
+
+        socket.on('connect', () => {
+            console.log('[Controller] Socket connected:', socket.id);
+            if (connectMsg && !sessionId) {
+                connectMsg.textContent = 'Connected! No session ID found.';
+            }
+        });
+
+        socket.on('connect_error', (err) => {
+            console.error('[Controller] Connection error:', err.message);
+            if (connectMsg) {
+                connectMsg.textContent = `Connection error: ${err.message}`;
+                connectMsg.classList.add('error');
+            }
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.warn('[Controller] Disconnected:', reason);
+        });
+
+        socket.on('reconnect_attempt', (attempt) => {
+            console.log('[Controller] Reconnecting... attempt', attempt);
+            if (connectMsg) {
+                connectMsg.textContent = `Reconnecting... (attempt ${attempt})`;
+            }
+        });
+
+        socket.on('reconnect_failed', () => {
+            if (connectMsg) {
+                connectMsg.textContent = 'Could not connect to server. Check WiFi and try refreshing.';
+                connectMsg.classList.add('error');
+            }
+        });
 
         let playerNum = null;
         let gameStarted = false;
@@ -620,10 +628,10 @@
         const NO_HAND_THRESHOLD = 12;
 
         const gestureMap = {
-            'thumb_left': { action: 'MOVE_LEFT', icon: '👈', name: 'LEFT' },
-            'index_up': { action: 'MOVE_RIGHT', icon: '☝️', name: 'RIGHT' },
-            'shaka': { action: 'ROTATE', icon: '🤙', name: 'ROTATE' },
-            'open_palm': { action: 'DROP', icon: '✋', name: 'DROP' }
+            'thumb_left': { action: 'MOVE_LEFT', icon: 'ðŸ‘ˆ', name: 'LEFT' },
+            'index_up': { action: 'MOVE_RIGHT', icon: 'â˜ï¸', name: 'RIGHT' },
+            'shaka': { action: 'ROTATE', icon: 'ðŸ¤™', name: 'ROTATE' },
+            'open_palm': { action: 'DROP', icon: 'âœ‹', name: 'DROP' }
         };
 
         // === ANGLE-BASED FINGER DETECTION ===
@@ -656,13 +664,13 @@
             const dip = landmarks[ids[2]];
             const tip = landmarks[ids[3]];
 
-            // Curl angle at PIP joint (MCP → PIP → DIP)
+            // Curl angle at PIP joint (MCP â†’ PIP â†’ DIP)
             const pipAngle = angleBetween(mcp, pip, dip);
-            // Curl angle at DIP joint (PIP → DIP → TIP)
+            // Curl angle at DIP joint (PIP â†’ DIP â†’ TIP)
             const dipAngle = angleBetween(pip, dip, tip);
 
-            // Extended = both joints relatively straight (> 140°)
-            // Curled = at least one joint bent (< 100°)
+            // Extended = both joints relatively straight (> 140Â°)
+            // Curled = at least one joint bent (< 100Â°)
             return pipAngle > 140 && dipAngle > 140;
         }
 
@@ -673,7 +681,7 @@
             const tip = landmarks[4];  // Tip
             const wrist = landmarks[0];
 
-            // Angle at MCP (CMC → MCP → IP)
+            // Angle at MCP (CMC â†’ MCP â†’ IP)
             const mcpAngle = angleBetween(cmc, mcp, ip);
             // Distance from tip to wrist vs IP to wrist
             const tipDist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
@@ -693,7 +701,7 @@
             // Debug: update finger state display (shown in gesture name area when debugging)
             const fingerState = `${thumb ? 'T' : '_'}${index ? 'I' : '_'}${middle ? 'M' : '_'}${ring ? 'R' : '_'}${pinky ? 'P' : '_'}`;
 
-            // FIST: all fingers curled — now idle (no action)
+            // FIST: all fingers curled â€” now idle (no action)
             if (!thumb && !index && !middle && !ring && !pinky) {
                 return { gesture: 'fist', debug: fingerState };
             }
@@ -713,7 +721,7 @@
                 return { gesture: 'thumb_left', debug: fingerState };
             }
 
-            // OPEN PALM: all fingers extended — DROP gesture
+            // OPEN PALM: all fingers extended â€” DROP gesture
             if (thumb && index && middle && ring && pinky) {
                 return { gesture: 'open_palm', debug: fingerState };
             }
@@ -763,18 +771,23 @@
 
         function processNoHand() {
             // No hand = idle, do nothing (DROP is now open palm gesture)
-            document.getElementById('gesture-icon').textContent = '👋';
+            document.getElementById('gesture-icon').textContent = 'ðŸ‘‹';
             document.getElementById('gesture-name').textContent = 'NO HAND';
             lastSentAction = null;
             gestureHistory = [];
         }
 
         // === SESSION MANAGEMENT ===
-        // Join session
-        if (!sessionId) {
-            document.getElementById('connect-message').textContent = 'No session ID found!';
-            document.getElementById('connect-message').classList.add('error');
-        } else {
+        // Join session â€” MUST wait for socket to connect first
+        function joinSession() {
+            if (!sessionId) {
+                document.getElementById('connect-message').textContent = 'No session ID found!';
+                document.getElementById('connect-message').classList.add('error');
+                return;
+            }
+
+            document.getElementById('connect-message').textContent = 'Joining session...';
+
             socket.emit('join-session', { sessionId }, (response) => {
                 if (response.error) {
                     document.getElementById('connect-message').textContent = response.error;
@@ -783,7 +796,7 @@
                 }
 
                 playerNum = response.playerNum;
-                currentGame = response.game; // e.g., 'dino-dash' or 'gastro-tetris'
+                currentGame = response.game;
                 document.getElementById('connecting-screen').style.display = 'none';
                 document.getElementById('waiting-overlay').classList.add('visible');
 
@@ -794,19 +807,27 @@
             });
         }
 
-        // Game started — show appropriate controller based on game type
+        // Wait for connection, then join
+        if (socket.connected) {
+            joinSession();
+        } else {
+            socket.on('connect', joinSession);
+        }
+
+        // Game started â€” show appropriate controller based on game type
         socket.on('game-started', () => {
             gameStarted = true;
             document.getElementById('waiting-overlay').classList.remove('visible');
 
-            if (currentGame === 'shadow-breath') {
-                // Breath mode: use mic + proximity + gyro
-                document.getElementById('breath-controller').classList.add('visible');
-                initBreathController();
+            if (currentGame === 'ghost-breath') {
+                // Ghost Breath: mic-only breath detection
+                document.getElementById('ghost-controller').classList.add('visible');
+                initGhostBreathController();
             } else if (currentGame === 'dino-dash') {
                 // Active mode: use body motion controller
                 document.getElementById('motion-controller').classList.add('visible');
                 initMotionController();
+
             } else {
                 // Rest mode: use gesture camera controller
                 document.getElementById('controller').style.display = 'flex';
@@ -939,13 +960,13 @@
         });
 
         // ============================================
-        // KNIGHT DASH — MOTION CONTROLLER (Accelerometer)
+        // KNIGHT DASH â€” MOTION CONTROLLER (Accelerometer)
         // ============================================
         function initMotionController() {
             let jumpCount = 0;
             let lastJumpTime = 0;
             const JUMP_COOLDOWN = 500; // ms
-            const JUMP_THRESHOLD = 15; // m/s² acceleration spike
+            const JUMP_THRESHOLD = 15; // m/sÂ² acceleration spike
             let accelSamples = [];
             const SAMPLE_WINDOW = 5;
 
@@ -965,11 +986,11 @@
 
                 // Visual feedback
                 jumpZone.classList.add('active');
-                jumpIcon.textContent = '🦕';
+                jumpIcon.textContent = 'ðŸ¦•';
                 jumpLabel.textContent = 'JUMP!';
                 setTimeout(() => {
                     jumpZone.classList.remove('active');
-                    jumpIcon.textContent = '🦘';
+                    jumpIcon.textContent = 'ðŸ¦˜';
                     jumpLabel.textContent = 'READY';
                 }, 300);
 
@@ -981,7 +1002,7 @@
 
             // Request permission for iOS 13+
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                // iOS — need user gesture to request permission
+                // iOS â€” need user gesture to request permission
                 jumpZone.addEventListener('click', async () => {
                     try {
                         const permission = await DeviceMotionEvent.requestPermission();
@@ -996,7 +1017,7 @@
                 // Show tap hint for iOS
                 jumpLabel.textContent = 'TAP TO ENABLE';
             } else {
-                // Android / desktop — no permission needed
+                // Android / desktop â€” no permission needed
                 startMotionListening();
             }
 
@@ -1032,36 +1053,28 @@
         }
 
         // ============================================
-        // SHADOW BREATH — BREATH CONTROLLER
-        // (Microphone + Proximity Sensor + Gyroscope)
+        // GHOST BREATH â€” BREATH CONTROLLER (Mic only)
         // ============================================
-        function sendInteract() {
-            if (gameStarted) socket.emit('gesture', { action: 'INTERACT' });
-        }
-        function sendDash() {
-            if (gameStarted) socket.emit('gesture', { action: 'DASH' });
-        }
+        function initGhostBreathController() {
+            const breathCircle = document.getElementById('ghost-breath-circle');
+            const breathIcon = document.getElementById('ghost-breath-icon');
+            const breathLabel = document.getElementById('ghost-breath-label');
+            const micFill = document.getElementById('ghost-mic-fill');
+            const micLevelText = document.getElementById('ghost-mic-level');
 
-        function initBreathController() {
-            const breathCircle = document.getElementById('breath-circle');
-            const breathIcon = document.getElementById('breath-icon');
-            const breathLabel = document.getElementById('breath-label');
-            const lungBarFill = document.getElementById('lung-bar-fill');
-            const micLevel = document.getElementById('breath-mic-level');
-
-            let isHoldingBreath = false;
-            let noiseFloor = 0.02; // will be calibrated
+            let noiseFloor = 0.02;
             let calibrationSamples = [];
             let calibrated = false;
-            let holdStartTime = 0;       // when silence started
-            let releaseCooldown = 0;      // cooldown after releasing
-            let smoothedRms = 0;          // smoothed mic level
-            let rmsSamples = [];          // rolling average buffer
-            const SMOOTH_WINDOW = 8;      // samples for smoothing
-            const MIN_HOLD_TIME = 400;    // ms of silence before activating
-            const RELEASE_COOLDOWN = 600; // ms before can re-trigger hold
+            let smoothedRms = 0;
+            let rmsSamples = [];
+            const SMOOTH_WINDOW = 10;
+            let breathActive = false;
+            let breathStartTime = 0;
+            const MIN_BREATH_DURATION = 120; // ms
+            const BREATH_THRESHOLD_MUL = 2.0;
+            const RELEASE_MUL = 1.3;
+            const CALIBRATION_COUNT = 90;
 
-            // === 1. MICROPHONE — Breath Detection (using time-domain RMS) ===
             async function initMic() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({
@@ -1078,14 +1091,12 @@
                     analyser.smoothingTimeConstant = 0.3;
                     source.connect(analyser);
 
-                    // Use time-domain data — much more reliable for breath detection
                     const dataArray = new Float32Array(analyser.fftSize);
 
                     breathLabel.textContent = 'CALIBRATING...';
-                    breathIcon.textContent = '⏳';
+                    breathIcon.textContent = 'â³';
 
                     function processAudio() {
-                        // Time-domain RMS (much better for detecting actual silence vs breathing)
                         analyser.getFloatTimeDomainData(dataArray);
                         let sum = 0;
                         for (let i = 0; i < dataArray.length; i++) {
@@ -1093,207 +1104,81 @@
                         }
                         const rawRms = Math.sqrt(sum / dataArray.length);
 
-                        // Smooth the RMS with a rolling average
+                        // Smooth
                         rmsSamples.push(rawRms);
                         if (rmsSamples.length > SMOOTH_WINDOW) rmsSamples.shift();
                         smoothedRms = rmsSamples.reduce((a, b) => a + b, 0) / rmsSamples.length;
 
-                        // Calibration: first 2 seconds — sit silently
+                        // Calibration
                         if (!calibrated) {
                             calibrationSamples.push(rawRms);
-                            const progress = Math.min(100, (calibrationSamples.length / 60) * 100);
-                            lungBarFill.style.width = progress + '%';
-                            if (calibrationSamples.length >= 60) {
-                                // Use median to be robust against outliers
+                            const progress = Math.round((calibrationSamples.length / CALIBRATION_COUNT) * 100);
+                            breathLabel.textContent = `CALIBRATING ${progress}%`;
+                            micFill.style.width = progress + '%';
+
+                            if (calibrationSamples.length >= CALIBRATION_COUNT) {
                                 const sorted = [...calibrationSamples].sort((a, b) => a - b);
                                 const median = sorted[Math.floor(sorted.length / 2)];
-                                noiseFloor = median * 1.5; // threshold just above ambient noise
-                                // Ensure minimum threshold so it's not too sensitive
-                                noiseFloor = Math.max(noiseFloor, 0.005);
+                                noiseFloor = Math.max(median * BREATH_THRESHOLD_MUL, 0.003);
                                 calibrated = true;
-                                breathLabel.textContent = 'READY — HOLD BREATH';
-                                breathIcon.textContent = '🫁';
-                                lungBarFill.style.width = '100%';
+                                breathLabel.textContent = 'READY â€” BREATHE';
+                                breathIcon.textContent = 'ðŸŽ¤';
                             }
                             requestAnimationFrame(processAudio);
                             return;
                         }
 
-                        // Update lung bar to show current mic level relative to threshold
-                        const levelPct = Math.min(100, (smoothedRms / (noiseFloor * 3)) * 100);
-                        lungBarFill.style.width = levelPct + '%';
-                        lungBarFill.style.background = smoothedRms < noiseFloor
-                            ? 'linear-gradient(90deg, #22cc66, #44ff88)'
-                            : 'linear-gradient(90deg, #4477ff, #66aaff)';
-
-                        // Use hysteresis: different thresholds for entering vs leaving hold
-                        const isSilent = smoothedRms < noiseFloor;
-                        const isLoud = smoothedRms > noiseFloor * 1.8; // need to be clearly louder to break hold
+                        // Breath detection with hysteresis
                         const now = Date.now();
+                        const breathThreshold = noiseFloor;
+                        const releaseThreshold = noiseFloor * (RELEASE_MUL / BREATH_THRESHOLD_MUL);
 
-                        // Update UI
-                        micLevel.textContent = `MIC: ${(smoothedRms * 1000).toFixed(0)}`;
-
-                        // Cooldown after releasing
-                        if (releaseCooldown > 0 && now < releaseCooldown) {
-                            requestAnimationFrame(processAudio);
-                            return;
-                        }
-
-                        if (isSilent && !isHoldingBreath) {
-                            // Start hold timer — need sustained silence
-                            if (holdStartTime === 0) {
-                                holdStartTime = now;
-                            }
-                            // Only activate after MIN_HOLD_TIME of sustained silence
-                            if (now - holdStartTime >= MIN_HOLD_TIME) {
-                                isHoldingBreath = true;
-                                breathCircle.className = 'breath-circle holding';
-                                breathIcon.textContent = '👻';
-                                breathLabel.textContent = 'INVISIBLE';
-                                socket.emit('gesture', { action: 'BREATH_HOLD' });
-                            }
-                        } else if (!isSilent) {
-                            holdStartTime = 0; // reset hold timer
-                        }
-
-                        if (isLoud && isHoldingBreath) {
-                            isHoldingBreath = false;
-                            holdStartTime = 0;
-                            releaseCooldown = now + RELEASE_COOLDOWN; // grace period
-                            breathCircle.className = 'breath-circle breathing';
-                            breathIcon.textContent = '🫁';
+                        if (!breathActive && smoothedRms > breathThreshold) {
+                            breathActive = true;
+                            breathStartTime = now;
+                            breathCircle.classList.add('active');
+                            micFill.classList.add('active');
                             breathLabel.textContent = 'BREATHING...';
-                            socket.emit('gesture', { action: 'BREATH_RELEASE' });
-                            // Reset to idle state after cooldown
-                            setTimeout(() => {
-                                if (!isHoldingBreath) {
-                                    breathCircle.className = 'breath-circle';
-                                    breathLabel.textContent = 'HOLD BREATH';
-                                    breathIcon.textContent = '🫁';
-                                }
-                            }, RELEASE_COOLDOWN);
+                            breathIcon.textContent = 'ðŸ«';
+                        } else if (breathActive && smoothedRms < releaseThreshold) {
+                            const duration = now - breathStartTime;
+                            if (duration >= MIN_BREATH_DURATION) {
+                                // Valid breath â€” send event to game
+                                socket.emit('breath-event', { timestamp: now });
+                                breathLabel.textContent = 'âœ“ BREATH SENT';
+                                setTimeout(() => {
+                                    if (!breathActive) {
+                                        breathLabel.textContent = 'READY â€” BREATHE';
+                                    }
+                                }, 400);
+                            }
+                            breathActive = false;
+                            breathCircle.classList.remove('active');
+                            micFill.classList.remove('active');
+                            breathIcon.textContent = 'ðŸŽ¤';
                         }
+
+                        // Update mic level bar
+                        const level = Math.min(1.0, smoothedRms / (noiseFloor * 3));
+                        micFill.style.width = (level * 100) + '%';
+                        micLevelText.textContent = `MIC: ${Math.round(level * 100)}%`;
 
                         requestAnimationFrame(processAudio);
                     }
 
-                    processAudio();
+                    requestAnimationFrame(processAudio);
+
                 } catch (err) {
-                    console.warn('Mic access denied:', err);
-                    breathLabel.textContent = 'MIC UNAVAILABLE';
-                    // Fallback: tap breath circle to toggle
-                    breathCircle.addEventListener('click', () => {
-                        isHoldingBreath = !isHoldingBreath;
-                        if (isHoldingBreath) {
-                            breathCircle.className = 'breath-circle holding';
-                            breathIcon.textContent = '👻';
-                            breathLabel.textContent = 'INVISIBLE';
-                            socket.emit('gesture', { action: 'BREATH_HOLD' });
-                        } else {
-                            breathCircle.className = 'breath-circle';
-                            breathIcon.textContent = '🫁';
-                            breathLabel.textContent = 'HOLD BREATH';
-                            socket.emit('gesture', { action: 'BREATH_RELEASE' });
-                        }
-                    });
+                    console.warn('Mic access failed:', err);
+                    breathLabel.textContent = 'MIC ERROR';
+                    breathIcon.textContent = 'âŒ';
                 }
             }
 
-            // === 2. PROXIMITY SENSOR — Eagle Vision ===
-            function initProximity() {
-                if ('ProximitySensor' in window) {
-                    try {
-                        const sensor = new ProximitySensor();
-                        sensor.addEventListener('reading', () => {
-                            if (sensor.near) {
-                                socket.emit('gesture', { action: 'FOCUS_ON' });
-                            } else {
-                                socket.emit('gesture', { action: 'FOCUS_OFF' });
-                            }
-                        });
-                        sensor.start();
-                    } catch (e) {
-                        console.warn('Proximity sensor unavailable');
-                    }
-                } else if ('AmbientLightSensor' in window) {
-                    // Fallback: use ambient light
-                    try {
-                        const als = new AmbientLightSensor();
-                        als.addEventListener('reading', () => {
-                            if (als.illuminance < 5) {
-                                socket.emit('gesture', { action: 'FOCUS_ON' });
-                            } else {
-                                socket.emit('gesture', { action: 'FOCUS_OFF' });
-                            }
-                        });
-                        als.start();
-                    } catch (e) {
-                        console.warn('Light sensor unavailable');
-                    }
-                }
-            }
-
-            // === 3. GYROSCOPE / ACCELEROMETER — Movement ===
-            function initTilt() {
-                let tiltActive = false;
-
-                function startTilt() {
-                    if (tiltActive) return;
-                    tiltActive = true;
-
-                    let baseGamma = null, bassBeta = null;
-
-                    window.addEventListener('deviceorientation', (event) => {
-                        const gamma = event.gamma || 0; // left-right (-90 to 90)
-                        const beta = event.beta || 0;   // front-back (-180 to 180)
-
-                        // Set baseline on first reading
-                        if (baseGamma === null) {
-                            baseGamma = gamma;
-                            bassBeta = beta;
-                        }
-
-                        // Calculate relative tilt
-                        const dx = (gamma - baseGamma) / 30; // normalize to ~-1 to 1
-                        const dy = (beta - bassBeta) / 30;
-
-                        // Clamp
-                        const cx = Math.max(-1, Math.min(1, dx));
-                        const cy = Math.max(-1, Math.min(1, dy));
-
-                        // Dead zone
-                        const deadZone = 0.1;
-                        const mx = Math.abs(cx) > deadZone ? cx : 0;
-                        const my = Math.abs(cy) > deadZone ? cy : 0;
-
-                        // Send tilt data — INVERTED X so tilt-right = move-right
-                        socket.emit('tilt', { x: -mx, y: my });
-                    });
-                }
-
-                // iOS permission
-                if (typeof DeviceOrientationEvent !== 'undefined' &&
-                    typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    breathCircle.addEventListener('click', async () => {
-                        try {
-                            const perm = await DeviceOrientationEvent.requestPermission();
-                            if (perm === 'granted') startTilt();
-                        } catch (e) {
-                            console.warn('Orientation permission denied');
-                        }
-                    }, { once: true });
-                } else {
-                    startTilt();
-                }
-            }
-
-            // Initialize all sensors
             initMic();
-            initProximity();
-            initTilt();
-
         }
+
+
     </script>
 
 </body>

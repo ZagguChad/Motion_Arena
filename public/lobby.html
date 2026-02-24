@@ -436,7 +436,9 @@
         const gameNames = {
             'gastro-tetris': { title: 'GASTRO TETRIS', desc: 'Gesture-controlled Tetris' },
             'dino-dash': { title: 'KNIGHT DASH', desc: 'Jump in real life to play!' },
-            'shadow-breath': { title: 'SHADOW BREATH', desc: 'Hold your breath to become invisible!' }
+            'ghost-breath': { title: 'GHOST OF THE BREATH TEMPLE', desc: 'Breathe to keep the flame alive!' },
+            'cpr-trainer': { title: 'CPR TRAINER', desc: 'Practice life-saving CPR compressions!' },
+            'tower-siege': { title: 'TOWER SIEGE', desc: 'Push-up powered tower warfare!' }
         };
 
         // Get game from URL
@@ -459,7 +461,9 @@
             const descMap = {
                 'gastro-tetris': { solo: 'Solo gesture-controlled Tetris', vs: '2-Player competitive Tetris' },
                 'dino-dash': { solo: 'Jump to dodge obstacles!', vs: 'Jump to dodge obstacles!' },
-                'shadow-breath': { solo: 'Stealth with breath control!', vs: 'Stealth with breath control!' }
+                'ghost-breath': { solo: 'Match breathing rhythms to keep the flame alive!', vs: 'Match breathing rhythms to keep the flame alive!' },
+                'cpr-trainer': { solo: 'Practice CPR with real-time feedback!', vs: 'Practice CPR with real-time feedback!' },
+                'tower-siege': { solo: 'Battle AI General Crimson!', vs: '1v1 Push-up battle!' }
             };
             const descs = descMap[game] || { solo: 'Solo mode', vs: 'Versus mode' };
 
@@ -534,7 +538,7 @@
 
         async function generateQRForIP(ip) {
             if (!sessionId) return;
-            const resp = await fetch(`/api/qr/${sessionId}?ip=${ip}`);
+            const resp = await fetch(`/api/qr/${sessionId}?ip=${ip}&game=${game}`);
             const data = await resp.json();
             document.getElementById('qr-container').innerHTML = `<img src="${data.qr}" alt="QR Code">`;
             document.getElementById('join-url').textContent = data.url;
@@ -588,13 +592,15 @@
             const gamePages = {
                 'gastro-tetris': `tetris.html?session=${sessionId}&mode=${selectedMode}`,
                 'dino-dash': `dino-dash/game.html?session=${sessionId}&mode=${selectedMode}`,
-                'shadow-breath': `shadow-breath/game.html?session=${sessionId}&mode=${selectedMode}`
+                'ghost-breath': `ghost-breath/game.html?session=${sessionId}&mode=${selectedMode}`,
+                'cpr-trainer': `cpr-trainer/game.html?session=${sessionId}&mode=${selectedMode}`,
+                'tower-siege': `tower-siege/game.html?session=${sessionId}&mode=${selectedMode}`
             };
             window.location.href = gamePages[game] || `tetris.html?session=${sessionId}&mode=${selectedMode}`;
         }
 
         // Auto-select solo mode for single-player-only games
-        const soloOnlyGames = ['dino-dash', 'shadow-breath'];
+        const soloOnlyGames = ['dino-dash', 'ghost-breath', 'cpr-trainer'];
         if (soloOnlyGames.includes(game)) {
             // Hide mode selection, auto-select 1p
             document.getElementById('mode-select').style.display = 'none';
