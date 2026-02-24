@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knight Dash — Motion Arena</title>
+    <meta name="description"
+        content="A retro endless runner controlled by your real-world jumps. Part of Motion Arena.">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="css/dino.css">
+</head>
+
+<body>
+
+    <!-- Waiting Screen (shown until game starts) -->
+    <div class="waiting-screen" id="waiting-screen">
+        <div class="dino-art" aria-hidden="true">
+            ██████
+            ██ ██
+            ████████████
+            ██ ██████ ██
+            ██████████████
+            ████████
+            ██ ██
+            ██ ██
+        </div>
+        <h1 class="waiting-title">KNIGHT DASH</h1>
+        <p class="waiting-subtitle">THE LAST DINO</p>
+        <p class="waiting-info">
+            Connect your phone controller to begin.<br>
+            Jump in real life to make the dino jump!
+        </p>
+        <div class="waiting-status" id="waiting-status">
+            <div class="loading-spinner"></div>
+            <span>Waiting for player...</span>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <div class="game-wrapper" id="game-wrapper" style="display: none;">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- HUD -->
+        <div class="hud">
+            <div class="hud-left">
+                <div class="score-display">
+                    <span class="score-label">SCORE</span>
+                    <span class="score-value" id="score-value">00000</span>
+                </div>
+                <div class="score-display high-score">
+                    <span class="score-label">HI</span>
+                    <span class="score-value" id="high-score-value">00000</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="connection-badge" id="connection-badge">
+                    <span class="status-dot waiting" id="conn-dot"></span>
+                    <span class="conn-text" id="conn-text">Connecting...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back button -->
+        <div class="back-btn">
+            <a href="/index.html">← EXIT</a>
+        </div>
+
+        <!-- Webcam preview with skeleton overlay + rotate -->
+        <div class="webcam-preview hidden" id="webcam-preview" style="
+            position: fixed; bottom: 12px; right: 12px;
+            width: 200px; height: 150px;
+            border-radius: 10px; overflow: hidden;
+            border: 2px solid rgba(0,229,255,0.4);
+            box-shadow: 0 0 20px rgba(0,229,255,0.15);
+            z-index: 100; background: #000;
+        ">
+            <video id="pose-video" playsinline muted style="
+                width: 100%; height: 100%; object-fit: cover;
+            "></video>
+            <canvas id="pose-overlay" style="
+                position: absolute; top: 0; left: 0;
+                width: 100%; height: 100%;
+                pointer-events: none; z-index: 2;
+            "></canvas>
+            <!-- Rotate button -->
+            <button id="cam-rotate-btn" title="Rotate camera" style="
+                position: absolute; top: 4px; right: 4px; z-index: 5;
+                width: 28px; height: 28px; border-radius: 50%;
+                border: 1px solid rgba(0,229,255,0.5);
+                background: rgba(0,0,0,0.6); color: #0ef;
+                font-size: 14px; cursor: pointer; padding: 0;
+                display: flex; align-items: center; justify-content: center;
+            ">🔄</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- MediaPipe Pose (optional — for webcam jump detection) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.min.js" crossorigin="anonymous"
+        async></script>
+
+    <script type="module">
+        import { Game } from './js/game.js';
+
+        // === Socket.IO Setup ===
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        const mode = params.get('mode') || '1p';
+
+        let game = null;
+
+        // Connection status UI
+        const connBadge = document.getElementById('connection-badge');
+        const connDot = document.getElementById('conn-dot');
+        const connText = document.getElementById('conn-text');
+        const waitingStatus = document.getElementById('waiting-status');
+
+        function setConnected(text, isConnected) {
+            connDot.className = `status-dot ${isConnected ? 'connected' : 'waiting'}`;
+            connText.textContent = text;
+            if (isConnected) {
+                connBadge.classList.add('connected');
+            } else {
+                connBadge.classList.remove('connected');
+            }
+        }
+
+        // Rejoin session (laptop navigated from lobby → game page)
+        let gameStarted = false;
+
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (response) => {
+                if (response.error) {
+                    waitingStatus.innerHTML = `<span style="color: var(--accent-red);">❌ ${response.error}</span>`;
+                    return;
+                }
+
+                console.log('[Dino Dash] Rejoined session:', response);
+                setConnected('Session active', true);
+
+                // If game already in progress, start immediately
+                if (response.state === 'playing') {
+                    startGameUI();
+                } else if (response.players && response.players.length >= 1) {
+                    waitingStatus.innerHTML = '<span style="color: var(--accent-green);">✅ Player connected! Starting...</span>';
+                    setTimeout(() => startGameUI(), 1000);
+                }
+            });
+        } else {
+            // No session — allow keyboard-only play
+            waitingStatus.innerHTML = `
+                <span style="color: var(--accent-cyan);">
+                    No session — Playing with keyboard only<br>
+                    <small style="color: var(--text-muted);">Press SPACE or ↑ to jump</small>
+                </span>
+            `;
+            setTimeout(() => startGameUI(), 2000);
+        }
+
+        // Listen for player joining
+        socket.on('player-joined', (data) => {
+            console.log('[Dino Dash] Player joined:', data);
+            setConnected('Player connected', true);
+            waitingStatus.innerHTML = '<span style="color: var(--accent-green);">✅ Player connected!</span>';
+        });
+
+        // Listen for game start signal from server
+        socket.on('game-started', () => {
+            console.log('[Dino Dash] Game started signal received');
+            startGameUI();
+        });
+
+        // Session ended
+        socket.on('session-ended', (data) => {
+            setConnected('Disconnected', false);
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        // === Start Game (guarded — only runs once) ===
+        function startGameUI() {
+            if (gameStarted) return;
+            gameStarted = true;
+
+            // CRITICAL: Tell server the game is now 'playing' so it relays gestures
+            socket.emit('start-game');
+
+            // Hide waiting screen, show game
+            document.getElementById('waiting-screen').classList.add('hidden');
+            document.getElementById('game-wrapper').style.display = 'block';
+
+            // Initialize game
+            const canvas = document.getElementById('game-canvas');
+            game = new Game(canvas, socket);
+
+            game.init().then(() => {
+                const hiEl = document.getElementById('high-score-value');
+                if (hiEl) hiEl.textContent = String(game.highScore).padStart(5, '0');
+                game.start();
+            });
+        }
+
+        // === Handle tab visibility ===
+        document.addEventListener('visibilitychange', () => {
+            if (game && game.state === 'running') {
+                if (document.hidden) {
+                    game.running = false;
+                } else {
+                    game.running = true;
+                    game.loop();
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,23 +1,16 @@
 {
-  "name": "pushup-battle",
+  "name": "motion-arena",
   "version": "1.0.0",
-  "description": "2-Player Push-Up Battle Game — MediaPipe Pose on mobile + WebSocket + Canvas game display",
-  "main": "server/server.js",
+  "description": "Motion Arena - Gesture-controlled multiplayer gaming platform",
+  "main": "server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "node server/server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
-  "keywords": [
-    "pushup",
-    "mediapipe",
-    "websocket",
-    "game",
-    "pose-estimation"
-  ],
-  "license": "MIT",
   "dependencies": {
-    "qrcode": "^1.5.4",
+    "express": "^4.18.2",
+    "qrcode": "^1.5.3",
     "selfsigned": "^5.5.0",
-    "ws": "^8.18.0"
+    "socket.io": "^4.7.4"
   }
 }

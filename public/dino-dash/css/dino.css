@@ -1,0 +1,275 @@
+/* ===================================
+   DINO DASH — Game Styles
+   =================================== */
+
+/* Canvas container */
+.game-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #0a0a0f;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* === HUD Overlay === */
+.hud {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 28px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.hud-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hud-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.score-label {
+    font-family: var(--font-retro);
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+}
+
+.score-value {
+    font-family: var(--font-retro);
+    font-size: 1.1rem;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    letter-spacing: 3px;
+}
+
+.high-score .score-value {
+    color: var(--accent-yellow);
+    text-shadow: 0 0 10px rgba(255, 221, 0, 0.5);
+    font-size: 0.8rem;
+}
+
+.high-score .score-label {
+    color: var(--accent-yellow);
+    opacity: 0.6;
+}
+
+/* Connection status */
+.connection-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    border: 1px solid var(--border-subtle);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    pointer-events: auto;
+}
+
+.connection-badge .status-dot {
+    width: 8px;
+    height: 8px;
+}
+
+.connection-badge.connected {
+    border-color: rgba(0, 255, 136, 0.2);
+}
+
+.connection-badge.connected .conn-text {
+    color: var(--accent-green);
+}
+
+/* Speed indicator */
+.speed-display {
+    font-family: var(--font-retro);
+    font-size: 0.45rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+/* === Waiting Screen === */
+.waiting-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    background: var(--bg-primary);
+    text-align: center;
+    padding: 20px;
+}
+
+.waiting-screen.hidden {
+    display: none;
+}
+
+.waiting-title {
+    font-family: var(--font-retro);
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #53d769, #00e5ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.waiting-subtitle {
+    font-family: var(--font-retro);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    margin-bottom: 40px;
+}
+
+.waiting-info {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+.waiting-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent-yellow);
+    font-size: 0.85rem;
+}
+
+.waiting-status .loading-spinner {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+/* Dino ASCII art on waiting screen */
+.dino-art {
+    font-family: monospace;
+    font-size: 0.6rem;
+    color: var(--accent-green);
+    opacity: 0.4;
+    line-height: 1.2;
+    margin-bottom: 40px;
+    white-space: pre;
+}
+
+/* === Back Button === */
+.back-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 20;
+    pointer-events: auto;
+}
+
+.back-btn a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.75rem;
+    transition: all 0.3s;
+}
+
+.back-btn a:hover {
+    color: var(--accent-cyan);
+    border-color: var(--border-accent);
+}
+
+/* === Webcam preview (small corner) === */
+.webcam-preview {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 120px;
+    height: 90px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+    opacity: 0.4;
+    z-index: 15;
+    transition: opacity 0.3s;
+}
+
+.webcam-preview:hover {
+    opacity: 0.8;
+}
+
+.webcam-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.webcam-preview.hidden {
+    display: none;
+}
+
+/* === Loading spinner (reuse) === */
+.loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--accent-cyan);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .hud {
+        padding: 12px 16px;
+    }
+
+    .score-value {
+        font-size: 0.85rem;
+    }
+
+    .webcam-preview {
+        width: 80px;
+        height: 60px;
+    }
+}

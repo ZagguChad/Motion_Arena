@@ -1,6 +1,5 @@
 node_modules/
-certs/
 .env
-*.log
-.DS_Store
-Thumbs.db
+*.pem
+*.key
+*.cert

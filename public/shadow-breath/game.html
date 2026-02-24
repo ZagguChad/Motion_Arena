@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Breath — Motion Arena</title>
+    <meta name="description"
+        content="A stealth game controlled by your breath. Hold your breath to become invisible. Part of Motion Arena.">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="css/shadow.css">
+</head>
+
+<body>
+
+    <!-- Waiting Screen -->
+    <div class="waiting-screen" id="waiting-screen">
+        <div class="assassin-art" aria-hidden="true">
+            ██ ██
+            ██████
+            ██ ██
+            ██████████
+            ██ ██
+            ██ ██
+            ██ ██
+        </div>
+        <h1 class="waiting-title">SHADOW BREATH</h1>
+        <p class="waiting-subtitle">THE SILENT ASSASSIN</p>
+        <p class="waiting-info">
+            Connect your phone controller to begin.<br>
+            Hold your breath to become invisible!
+        </p>
+        <div class="waiting-status" id="waiting-status">
+            <div class="loading-spinner"></div>
+            <span>Waiting for player...</span>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <div class="game-wrapper" id="game-wrapper" style="display: none;">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Back button -->
+        <div class="back-btn">
+            <a href="/index.html">← EXIT</a>
+        </div>
+
+        <!-- Keyboard controls hint -->
+        <div class="controls-hint" id="controls-hint">
+            <kbd>WASD</kbd> Move &nbsp;
+            <kbd>SPACE</kbd> Hold Breath &nbsp;
+            <kbd>E</kbd> Interact &nbsp;
+            <kbd>F</kbd> Focus &nbsp;
+            <kbd>SHIFT</kbd> Dash
+        </div>
+
+        <!-- Connection badge -->
+        <div style="position:fixed; top:12px; right:12px; z-index:20;">
+            <div class="connection-badge" id="connection-badge">
+                <span class="status-dot waiting" id="conn-dot"></span>
+                <span class="conn-text" id="conn-text">Connecting...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script type="module">
+        import { Game } from './js/game.js';
+
+        // === Socket.IO Setup ===
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        const mode = params.get('mode') || '1p';
+
+        let game = null;
+
+        // Connection status UI
+        const connBadge = document.getElementById('connection-badge');
+        const connDot = document.getElementById('conn-dot');
+        const connText = document.getElementById('conn-text');
+        const waitingStatus = document.getElementById('waiting-status');
+
+        function setConnected(text, isConnected) {
+            connDot.className = `status-dot ${isConnected ? 'connected' : 'waiting'}`;
+            connText.textContent = text;
+            if (isConnected) {
+                connBadge.classList.add('connected');
+            } else {
+                connBadge.classList.remove('connected');
+            }
+        }
+
+        let gameStarted = false;
+
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (response) => {
+                if (response.error) {
+                    waitingStatus.innerHTML = `<span style="color: var(--accent-red);">❌ ${response.error}</span>`;
+                    return;
+                }
+
+                console.log('[Shadow Breath] Rejoined session:', response);
+                setConnected('Session active', true);
+
+                if (response.state === 'playing') {
+                    startGameUI();
+                } else if (response.players && response.players.length >= 1) {
+                    waitingStatus.innerHTML = '<span style="color: var(--accent-green);">✅ Player connected! Starting...</span>';
+                    setTimeout(() => startGameUI(), 1000);
+                }
+            });
+        } else {
+            // No session — keyboard-only play
+            waitingStatus.innerHTML = `
+                <span style="color: var(--accent-cyan);">
+                    No session — Playing with keyboard only<br>
+                    <small style="color: var(--text-muted);">WASD to move, SPACE to hold breath, E to interact</small>
+                </span>
+            `;
+            setTimeout(() => startGameUI(), 2000);
+        }
+
+        // Listen for player joining
+        socket.on('player-joined', (data) => {
+            console.log('[Shadow Breath] Player joined:', data);
+            setConnected('Player connected', true);
+            waitingStatus.innerHTML = '<span style="color: var(--accent-green);">✅ Player connected!</span>';
+        });
+
+        // Listen for game start
+        socket.on('game-started', () => {
+            console.log('[Shadow Breath] Game started signal received');
+            startGameUI();
+        });
+
+        // Session ended
+        socket.on('session-ended', (data) => {
+            setConnected('Disconnected', false);
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        // Handle breath data from controller
+        socket.on('gesture', (data) => {
+            if (!game) return;
+
+            switch (data.action) {
+                case 'BREATH_HOLD':
+                    game.handleBreathState(true);
+                    break;
+                case 'BREATH_RELEASE':
+                    game.handleBreathState(false);
+                    break;
+                case 'INTERACT':
+                    game.handleInteract();
+                    break;
+                case 'DASH':
+                    game.handleDash();
+                    break;
+                case 'FOCUS_ON':
+                    game.handleFocus(true);
+                    break;
+                case 'FOCUS_OFF':
+                    game.handleFocus(false);
+                    break;
+            }
+        });
+
+        // Handle movement data (gyroscope tilt)
+        socket.on('tilt', (data) => {
+            if (!game) return;
+            game.handleMovement(data.x || 0, data.y || 0);
+        });
+
+        // === Start Game ===
+        function startGameUI() {
+            if (gameStarted) return;
+            gameStarted = true;
+
+            socket.emit('start-game');
+
+            document.getElementById('waiting-screen').classList.add('hidden');
+            document.getElementById('game-wrapper').style.display = 'flex';
+
+            const canvas = document.getElementById('game-canvas');
+            game = new Game(canvas, socket);
+
+            game.init().then(() => {
+                game.start();
+            });
+        }
+
+        // Handle tab visibility
+        document.addEventListener('visibilitychange', () => {
+            if (game && game.state === 'playing') {
+                if (document.hidden) {
+                    game.running = false;
+                } else {
+                    game.running = true;
+                    game.lastTime = performance.now();
+                    game.loop();
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,200 @@
+/* ============================================
+   Shadow Breath — Game Styles
+   ============================================ */
+
+.game-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0a0a15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#game-canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    width: 100%;
+    max-width: 960px;
+    max-height: 540px;
+    aspect-ratio: 16 / 9;
+    border: 2px solid rgba(100, 170, 255, 0.2);
+    border-radius: 4px;
+    box-shadow: 0 0 40px rgba(50, 100, 200, 0.1);
+}
+
+/* Waiting Screen */
+.waiting-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    text-align: center;
+    padding: 20px;
+    transition: opacity 0.5s;
+}
+
+.waiting-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.waiting-title {
+    font-family: var(--font-retro);
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #4477ff, #66aaff, #8844ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+}
+
+.waiting-subtitle {
+    font-family: var(--font-retro);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+}
+
+.waiting-info {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.waiting-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.assassin-art {
+    font-family: monospace;
+    font-size: 8px;
+    line-height: 1;
+    color: #4477ff;
+    margin-bottom: 20px;
+    white-space: pre;
+    text-shadow: 0 0 10px rgba(68, 119, 255, 0.4);
+}
+
+/* HUD */
+.hud {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.hud-left,
+.hud-right {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.score-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.score-label {
+    font-family: var(--font-retro);
+    font-size: 0.45rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+}
+
+.score-value {
+    font-family: var(--font-retro);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
+
+.connection-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    pointer-events: auto;
+}
+
+.connection-badge.connected {
+    border-color: rgba(0, 255, 136, 0.3);
+    color: var(--accent-green);
+}
+
+.back-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 20;
+}
+
+.back-btn a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-family: var(--font-retro);
+    font-size: 0.55rem;
+    padding: 8px 16px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.5);
+    transition: all 0.3s;
+}
+
+.back-btn a:hover {
+    color: var(--accent-cyan);
+    border-color: var(--border-accent);
+}
+
+/* Keyboard controls hint */
+.controls-hint {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    z-index: 20;
+    font-family: monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    opacity: 0.5;
+}
+
+.controls-hint kbd {
+    padding: 1px 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.6rem;
+}

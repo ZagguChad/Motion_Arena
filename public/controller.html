@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Motion Arena — Controller</title>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .controller {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 16px;
+            position: relative;
+        }
+
+        /* Header */
+        .ctrl-header {
+            text-align: center;
+            padding: 12px 0;
+            flex-shrink: 0;
+        }
+
+        .ctrl-header h1 {
+            font-family: var(--font-retro);
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+        }
+
+        .ctrl-header .player-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-top: 8px;
+            font-family: var(--font-retro);
+            font-size: 0.55rem;
+            letter-spacing: 1px;
+        }
+
+        .ctrl-header .player-badge.p1 {
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            color: var(--accent-cyan);
+        }
+
+        .ctrl-header .player-badge.p2 {
+            background: rgba(255, 0, 229, 0.1);
+            border: 1px solid rgba(255, 0, 229, 0.3);
+            color: var(--accent-magenta);
+        }
+
+        /* Camera Container */
+        .camera-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin: 12px 0;
+            background: #000;
+            border: 1px solid var(--border-subtle);
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* Gesture Display */
+        .gesture-display {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-accent);
+            text-align: center;
+            z-index: 10;
+            min-width: 180px;
+        }
+
+        .gesture-display .gesture-icon {
+            font-size: 2rem;
+            margin-bottom: 4px;
+        }
+
+        .gesture-display .gesture-name {
+            font-family: var(--font-retro);
+            font-size: 0.6rem;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 0.8rem;
+        }
+
+        .status-bar .connection {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+
+        .status-bar .fps {
+            font-family: monospace;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Connection Screen */
+        .connecting-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .connecting-screen h2 {
+            font-family: var(--font-retro);
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .connecting-screen p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .connecting-screen .error {
+            color: var(--accent-red);
+        }
+
+        /* Waiting screen */
+        .waiting-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 15, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            text-align: center;
+            padding: 24px;
+            display: none;
+        }
+
+        .waiting-overlay.visible {
+            display: flex;
+        }
+
+        .waiting-overlay h2 {
+            font-family: var(--font-retro);
+            font-size: 0.8rem;
+            color: var(--accent-green);
+            margin-bottom: 12px;
+        }
+
+        .waiting-overlay p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* === KNIGHT DASH MOTION CONTROLLER === */
+        .motion-controller {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            padding: 16px;
+            position: relative;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .motion-controller.visible {
+            display: flex;
+        }
+
+        .motion-header h1 {
+            font-family: var(--font-retro);
+            font-size: 0.7rem;
+            color: var(--accent-green);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .motion-header .game-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            background: rgba(83, 215, 105, 0.1);
+            border: 1px solid rgba(83, 215, 105, 0.3);
+            border-radius: 20px;
+            font-family: var(--font-retro);
+            font-size: 0.5rem;
+            color: var(--accent-green);
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+        }
+
+        .jump-zone {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 3px solid rgba(83, 215, 105, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            transition: all 0.15s;
+            background: rgba(83, 215, 105, 0.05);
+        }
+
+        .jump-zone.active {
+            border-color: var(--accent-green);
+            background: rgba(83, 215, 105, 0.15);
+            box-shadow: 0 0 60px rgba(83, 215, 105, 0.3);
+            transform: scale(1.08);
+        }
+
+        .jump-zone .jump-icon {
+            font-size: 4rem;
+            margin-bottom: 8px;
+        }
+
+        .jump-zone .jump-label {
+            font-family: var(--font-retro);
+            font-size: 0.7rem;
+            color: var(--accent-green);
+            letter-spacing: 3px;
+        }
+
+        .accel-bar {
+            width: 80%;
+            max-width: 280px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 16px 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .accel-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+            border-radius: 6px;
+            transition: width 0.1s;
+        }
+
+        .motion-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 16px;
+            line-height: 1.5;
+        }
+
+        .jump-count {
+            font-family: var(--font-retro);
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-top: 16px;
+        }
+
+        .motion-status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(10, 10, 15, 0.8);
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.75rem;
+        }
+
+        .motion-status-bar .connection {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+
+        /* === SHADOW BREATH CONTROLLER === */
+        .breath-controller {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            padding: 16px;
+            position: relative;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .breath-controller.visible {
+            display: flex;
+        }
+
+        .breath-header h1 {
+            font-family: var(--font-retro);
+            font-size: 0.7rem;
+            color: #4477ff;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .breath-header .game-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            background: rgba(68, 119, 255, 0.1);
+            border: 1px solid rgba(68, 119, 255, 0.3);
+            border-radius: 20px;
+            font-family: var(--font-retro);
+            font-size: 0.5rem;
+            color: #4477ff;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .breath-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 3px solid rgba(68, 119, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 16px 0;
+            transition: all 0.2s;
+            background: rgba(68, 119, 255, 0.05);
+        }
+
+        .breath-circle.holding {
+            border-color: #44ff88;
+            background: rgba(68, 255, 136, 0.1);
+            box-shadow: 0 0 40px rgba(68, 255, 136, 0.2);
+            transform: scale(0.9);
+        }
+
+        .breath-circle.breathing {
+            border-color: #ff6644;
+            background: rgba(255, 102, 68, 0.08);
+        }
+
+        .breath-circle .breath-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
+        }
+
+        .breath-circle .breath-label {
+            font-family: var(--font-retro);
+            font-size: 0.6rem;
+            color: #4477ff;
+            letter-spacing: 2px;
+        }
+
+        .breath-circle.holding .breath-label {
+            color: #44ff88;
+        }
+
+        .breath-circle.breathing .breath-label {
+            color: #ff6644;
+        }
+
+        .lung-bar-wrap {
+            width: 80%;
+            max-width: 260px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 7px;
+            overflow: hidden;
+            margin: 12px 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .lung-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #4477ff, #66aaff);
+            border-radius: 7px;
+            transition: width 0.15s;
+        }
+
+        .breath-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .breath-action-btn {
+            padding: 14px 24px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(68, 119, 255, 0.3);
+            background: rgba(68, 119, 255, 0.08);
+            color: #aaccff;
+            font-family: var(--font-retro);
+            font-size: 0.55rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .breath-action-btn:active {
+            background: rgba(68, 119, 255, 0.2);
+            transform: scale(0.95);
+        }
+
+        .tilt-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+
+        .breath-status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(10, 10, 15, 0.8);
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.75rem;
+        }
+
+        .breath-status-bar .connection {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Connecting Screen -->
+    <div class="connecting-screen" id="connecting-screen">
+        <h2>CONNECTING...</h2>
+        <p id="connect-message">Joining session...</p>
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Waiting for Game Start -->
+    <div class="waiting-overlay" id="waiting-overlay">
+        <h2>✅ CONNECTED!</h2>
+        <p>Waiting for the host to start the game...</p>
+        <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.8rem;">Keep this screen open</p>
+    </div>
+
+    <!-- Main Controller (Gesture Mode — for rest-mode games) -->
+    <div class="controller" id="controller" style="display: none;">
+        <div class="ctrl-header">
+            <h1>MOTION ARENA</h1>
+            <div class="player-badge p1" id="player-badge">PLAYER ?</div>
+        </div>
+
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas-overlay"></canvas>
+            <div class="gesture-display">
+                <div class="gesture-icon" id="gesture-icon">✋</div>
+                <div class="gesture-name" id="gesture-name">READY</div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="connection">
+                <span class="status-dot connected" id="status-dot"></span>
+                <span id="connection-text">Connected</span>
+            </div>
+            <div class="fps" id="fps-display">-- FPS</div>
+        </div>
+    </div>
+
+    <!-- Motion Controller (Body Movement Mode — for active-mode games like Dino Dash) -->
+    <div class="motion-controller" id="motion-controller">
+        <div class="motion-header">
+            <h1>⚔️ KNIGHT DASH</h1>
+            <div class="game-badge">BODY MOTION</div>
+        </div>
+
+        <div class="jump-zone" id="jump-zone">
+            <div class="jump-icon" id="jump-icon">🦘</div>
+            <div class="jump-label" id="jump-label">JUMP!</div>
+        </div>
+
+        <div class="accel-bar">
+            <div class="accel-bar-fill" id="accel-bar-fill"></div>
+        </div>
+
+        <p class="motion-hint">Hold your phone and jump!<br>Your movement controls the dino.</p>
+
+        <div class="jump-count" id="jump-count">JUMPS: 0</div>
+
+        <div class="motion-status-bar">
+            <div class="connection">
+                <span class="status-dot connected" id="motion-status-dot"></span>
+                <span id="motion-conn-text">Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shadow Breath Controller (Breath + Tilt Mode) -->
+    <div class="breath-controller" id="breath-controller">
+        <div class="breath-header">
+            <h1>🗡️ SHADOW BREATH</h1>
+            <div class="game-badge">BREATH + TILT</div>
+        </div>
+
+        <div class="breath-circle" id="breath-circle">
+            <div class="breath-icon" id="breath-icon">🫁</div>
+            <div class="breath-label" id="breath-label">BREATHE NORMALLY</div>
+        </div>
+
+        <div class="lung-bar-wrap">
+            <div class="lung-bar-fill" id="lung-bar-fill"></div>
+        </div>
+
+        <p class="tilt-hint">Tilt phone to move 🎮<br>Stay silent to go invisible 👻</p>
+
+        <div class="breath-actions">
+            <button class="breath-action-btn" id="interact-btn" ontouchstart="sendInteract()"
+                onclick="sendInteract()">🚪 INTERACT</button>
+            <button class="breath-action-btn" id="dash-btn" ontouchstart="sendDash()" onclick="sendDash()">💨
+                DASH</button>
+        </div>
+
+        <div class="breath-status-bar">
+            <div class="connection">
+                <span class="status-dot connected" id="breath-status-dot"></span>
+                <span id="breath-conn-text">Connected</span>
+            </div>
+            <span id="breath-mic-level" style="color: var(--text-muted);">MIC: --</span>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"></script>
+    <script>
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+
+        let playerNum = null;
+        let gameStarted = false;
+        let currentGame = null; // will be set after join
+
+        // === REFINED GESTURE ENGINE ===
+        // Gesture state
+        let lastSentAction = null;
+        let lastSentTime = 0;
+        let gestureHistory = [];       // Buffer of last N detected gestures
+        const STABILITY_FRAMES = 3;    // Frames a gesture must be consistent before triggering
+        const REPEAT_INTERVAL = {      // How fast held gestures repeat
+            'MOVE_LEFT': 150,
+            'MOVE_RIGHT': 150,
+            'ROTATE': 300,
+            'DROP': 120
+        };
+        const NO_HAND_THRESHOLD = 12;
+
+        const gestureMap = {
+            'thumb_left': { action: 'MOVE_LEFT', icon: '👈', name: 'LEFT' },
+            'index_up': { action: 'MOVE_RIGHT', icon: '☝️', name: 'RIGHT' },
+            'shaka': { action: 'ROTATE', icon: '🤙', name: 'ROTATE' },
+            'open_palm': { action: 'DROP', icon: '✋', name: 'DROP' }
+        };
+
+        // === ANGLE-BASED FINGER DETECTION ===
+        function angleBetween(a, b, c) {
+            // Angle at point b formed by segments ba and bc (in radians)
+            const ba = { x: a.x - b.x, y: a.y - b.y, z: (a.z || 0) - (b.z || 0) };
+            const bc = { x: c.x - b.x, y: c.y - b.y, z: (c.z || 0) - (b.z || 0) };
+            const dot = ba.x * bc.x + ba.y * bc.y + ba.z * bc.z;
+            const magBA = Math.sqrt(ba.x ** 2 + ba.y ** 2 + ba.z ** 2);
+            const magBC = Math.sqrt(bc.x ** 2 + bc.y ** 2 + bc.z ** 2);
+            if (magBA === 0 || magBC === 0) return 0;
+            const cosAngle = Math.max(-1, Math.min(1, dot / (magBA * magBC)));
+            return Math.acos(cosAngle) * (180 / Math.PI);
+        }
+
+        function isFingerExtended(landmarks, finger) {
+            // Finger indices: [MCP, PIP, DIP, TIP]
+            const fingers = {
+                index: [5, 6, 7, 8],
+                middle: [9, 10, 11, 12],
+                ring: [13, 14, 15, 16],
+                pinky: [17, 18, 19, 20]
+            };
+
+            const ids = fingers[finger];
+            if (!ids) return false;
+
+            const mcp = landmarks[ids[0]];
+            const pip = landmarks[ids[1]];
+            const dip = landmarks[ids[2]];
+            const tip = landmarks[ids[3]];
+
+            // Curl angle at PIP joint (MCP → PIP → DIP)
+            const pipAngle = angleBetween(mcp, pip, dip);
+            // Curl angle at DIP joint (PIP → DIP → TIP)
+            const dipAngle = angleBetween(pip, dip, tip);
+
+            // Extended = both joints relatively straight (> 140°)
+            // Curled = at least one joint bent (< 100°)
+            return pipAngle > 140 && dipAngle > 140;
+        }
+
+        function isThumbExtended(landmarks) {
+            const cmc = landmarks[1];  // CMC joint
+            const mcp = landmarks[2];  // MCP joint
+            const ip = landmarks[3];   // IP joint
+            const tip = landmarks[4];  // Tip
+            const wrist = landmarks[0];
+
+            // Angle at MCP (CMC → MCP → IP)
+            const mcpAngle = angleBetween(cmc, mcp, ip);
+            // Distance from tip to wrist vs IP to wrist
+            const tipDist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+            const ipDist = Math.hypot(ip.x - wrist.x, ip.y - wrist.y);
+
+            // Thumb is extended if MCP angle is wide AND tip is farther from wrist than IP
+            return mcpAngle > 140 && tipDist > ipDist * 1.1;
+        }
+
+        function detectGesture(landmarks) {
+            const thumb = isThumbExtended(landmarks);
+            const index = isFingerExtended(landmarks, 'index');
+            const middle = isFingerExtended(landmarks, 'middle');
+            const ring = isFingerExtended(landmarks, 'ring');
+            const pinky = isFingerExtended(landmarks, 'pinky');
+
+            // Debug: update finger state display (shown in gesture name area when debugging)
+            const fingerState = `${thumb ? 'T' : '_'}${index ? 'I' : '_'}${middle ? 'M' : '_'}${ring ? 'R' : '_'}${pinky ? 'P' : '_'}`;
+
+            // FIST: all fingers curled — now idle (no action)
+            if (!thumb && !index && !middle && !ring && !pinky) {
+                return { gesture: 'fist', debug: fingerState };
+            }
+
+            // INDEX UP: only index extended (thumb may or may not be out)
+            if (index && !middle && !ring && !pinky) {
+                return { gesture: 'index_up', debug: fingerState };
+            }
+
+            // SHAKA: thumb and pinky extended, others curled (must check BEFORE thumb_left)
+            if (thumb && !index && !middle && !ring && pinky) {
+                return { gesture: 'shaka', debug: fingerState };
+            }
+
+            // THUMB LEFT: only thumb extended, all others curled
+            if (thumb && !index && !middle && !ring && !pinky) {
+                return { gesture: 'thumb_left', debug: fingerState };
+            }
+
+            // OPEN PALM: all fingers extended — DROP gesture
+            if (thumb && index && middle && ring && pinky) {
+                return { gesture: 'open_palm', debug: fingerState };
+            }
+
+            return { gesture: null, debug: fingerState };
+        }
+
+        // === GESTURE STABILITY & SENDING ===
+        function processGesture(rawGesture) {
+            // Add to history buffer
+            gestureHistory.push(rawGesture);
+            if (gestureHistory.length > STABILITY_FRAMES) {
+                gestureHistory.shift();
+            }
+
+            // Check if all recent frames agree
+            if (gestureHistory.length < STABILITY_FRAMES) return;
+            const allSame = gestureHistory.every(g => g === gestureHistory[0]);
+            if (!allSame) return;
+
+            const stableGesture = gestureHistory[0];
+            if (!stableGesture) return; // Unknown gesture, don't act
+
+            const mapping = gestureMap[stableGesture];
+            if (!mapping) return; // No mapping for this gesture (e.g., open_palm)
+
+            const now = Date.now();
+            const action = mapping.action;
+
+            // If it's the same action, check repeat interval
+            if (action === lastSentAction) {
+                const interval = REPEAT_INTERVAL[action] || 200;
+                if (now - lastSentTime < interval) return;
+            }
+
+            // Send!
+            document.getElementById('gesture-icon').textContent = mapping.icon;
+            document.getElementById('gesture-name').textContent = mapping.name;
+
+            if (gameStarted) {
+                socket.emit('gesture', { action });
+            }
+
+            lastSentAction = action;
+            lastSentTime = now;
+        }
+
+        function processNoHand() {
+            // No hand = idle, do nothing (DROP is now open palm gesture)
+            document.getElementById('gesture-icon').textContent = '👋';
+            document.getElementById('gesture-name').textContent = 'NO HAND';
+            lastSentAction = null;
+            gestureHistory = [];
+        }
+
+        // === SESSION MANAGEMENT ===
+        // Join session
+        if (!sessionId) {
+            document.getElementById('connect-message').textContent = 'No session ID found!';
+            document.getElementById('connect-message').classList.add('error');
+        } else {
+            socket.emit('join-session', { sessionId }, (response) => {
+                if (response.error) {
+                    document.getElementById('connect-message').textContent = response.error;
+                    document.getElementById('connect-message').classList.add('error');
+                    return;
+                }
+
+                playerNum = response.playerNum;
+                currentGame = response.game; // e.g., 'dino-dash' or 'gastro-tetris'
+                document.getElementById('connecting-screen').style.display = 'none';
+                document.getElementById('waiting-overlay').classList.add('visible');
+
+                // Set player badge
+                const badge = document.getElementById('player-badge');
+                badge.textContent = `PLAYER ${playerNum}`;
+                badge.className = `player-badge p${playerNum}`;
+            });
+        }
+
+        // Game started — show appropriate controller based on game type
+        socket.on('game-started', () => {
+            gameStarted = true;
+            document.getElementById('waiting-overlay').classList.remove('visible');
+
+            if (currentGame === 'shadow-breath') {
+                // Breath mode: use mic + proximity + gyro
+                document.getElementById('breath-controller').classList.add('visible');
+                initBreathController();
+            } else if (currentGame === 'dino-dash') {
+                // Active mode: use body motion controller
+                document.getElementById('motion-controller').classList.add('visible');
+                initMotionController();
+            } else {
+                // Rest mode: use gesture camera controller
+                document.getElementById('controller').style.display = 'flex';
+                initCamera();
+            }
+        });
+
+        // Session ended
+        socket.on('session-ended', (data) => {
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        // === CAMERA + MEDIAPIPE ===
+        function initCamera() {
+            const video = document.getElementById('video');
+            const canvasOverlay = document.getElementById('canvas-overlay');
+            const ctx = canvasOverlay.getContext('2d');
+
+            let frameCount = 0;
+            let lastFpsTime = Date.now();
+            let noHandFrames = 0;
+
+            const hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
+            });
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 0,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults((results) => {
+                // FPS counter
+                frameCount++;
+                const now = Date.now();
+                if (now - lastFpsTime >= 1000) {
+                    document.getElementById('fps-display').textContent = `${frameCount} FPS`;
+                    frameCount = 0;
+                    lastFpsTime = now;
+                }
+
+                // Resize canvas to match video
+                canvasOverlay.width = canvasOverlay.clientWidth;
+                canvasOverlay.height = canvasOverlay.clientHeight;
+                ctx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    noHandFrames = 0;
+                    const landmarks = results.multiHandLandmarks[0];
+
+                    // Draw hand landmarks
+                    drawHand(ctx, landmarks, canvasOverlay.width, canvasOverlay.height);
+
+                    // Detect gesture using angle-based detection
+                    const result = detectGesture(landmarks);
+                    processGesture(result.gesture);
+                } else {
+                    // No hand detected
+                    noHandFrames++;
+                    if (noHandFrames >= NO_HAND_THRESHOLD) {
+                        processNoHand();
+                    }
+                }
+            });
+
+            const camera = new Camera(video, {
+                onFrame: async () => {
+                    await hands.send({ image: video });
+                },
+                width: 640,
+                height: 480,
+                facingMode: 'user'
+            });
+
+            camera.start();
+        }
+
+        // Draw hand landmarks
+        function drawHand(ctx, landmarks, w, h) {
+            // Mirror the X coordinates since video is mirrored
+            const connections = [
+                [0, 1], [1, 2], [2, 3], [3, 4],
+                [0, 5], [5, 6], [6, 7], [7, 8],
+                [0, 9], [9, 10], [10, 11], [11, 12],
+                [0, 13], [13, 14], [14, 15], [15, 16],
+                [0, 17], [17, 18], [18, 19], [19, 20],
+                [5, 9], [9, 13], [13, 17]
+            ];
+
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.6)';
+            ctx.lineWidth = 2;
+
+            for (const [i, j] of connections) {
+                ctx.beginPath();
+                ctx.moveTo((1 - landmarks[i].x) * w, landmarks[i].y * h);
+                ctx.lineTo((1 - landmarks[j].x) * w, landmarks[j].y * h);
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < landmarks.length; i++) {
+                const x = (1 - landmarks[i].x) * w;
+                const y = landmarks[i].y * h;
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = i === 0 ? 'var(--accent-magenta)' : 'rgba(0, 229, 255, 0.9)';
+                ctx.fill();
+            }
+        }
+
+        // Disconnect handling
+        socket.on('disconnect', () => {
+            document.getElementById('status-dot').className = 'status-dot disconnected';
+            document.getElementById('connection-text').textContent = 'Disconnected';
+            if (document.getElementById('motion-status-dot')) {
+                document.getElementById('motion-status-dot').className = 'status-dot disconnected';
+                document.getElementById('motion-conn-text').textContent = 'Disconnected';
+            }
+        });
+
+        socket.on('connect', () => {
+            document.getElementById('status-dot').className = 'status-dot connected';
+            document.getElementById('connection-text').textContent = 'Connected';
+            if (document.getElementById('motion-status-dot')) {
+                document.getElementById('motion-status-dot').className = 'status-dot connected';
+                document.getElementById('motion-conn-text').textContent = 'Connected';
+            }
+        });
+
+        // ============================================
+        // KNIGHT DASH — MOTION CONTROLLER (Accelerometer)
+        // ============================================
+        function initMotionController() {
+            let jumpCount = 0;
+            let lastJumpTime = 0;
+            const JUMP_COOLDOWN = 500; // ms
+            const JUMP_THRESHOLD = 15; // m/s² acceleration spike
+            let accelSamples = [];
+            const SAMPLE_WINDOW = 5;
+
+            const jumpZone = document.getElementById('jump-zone');
+            const jumpIcon = document.getElementById('jump-icon');
+            const jumpLabel = document.getElementById('jump-label');
+            const accelBarFill = document.getElementById('accel-bar-fill');
+            const jumpCountEl = document.getElementById('jump-count');
+
+            function triggerJump() {
+                const now = Date.now();
+                if (now - lastJumpTime < JUMP_COOLDOWN) return;
+                lastJumpTime = now;
+
+                jumpCount++;
+                jumpCountEl.textContent = `JUMPS: ${jumpCount}`;
+
+                // Visual feedback
+                jumpZone.classList.add('active');
+                jumpIcon.textContent = '🦕';
+                jumpLabel.textContent = 'JUMP!';
+                setTimeout(() => {
+                    jumpZone.classList.remove('active');
+                    jumpIcon.textContent = '🦘';
+                    jumpLabel.textContent = 'READY';
+                }, 300);
+
+                // Send jump event to server
+                if (gameStarted) {
+                    socket.emit('gesture', { action: 'JUMP' });
+                }
+            }
+
+            // Request permission for iOS 13+
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS — need user gesture to request permission
+                jumpZone.addEventListener('click', async () => {
+                    try {
+                        const permission = await DeviceMotionEvent.requestPermission();
+                        if (permission === 'granted') {
+                            startMotionListening();
+                        }
+                    } catch (e) {
+                        console.warn('Motion permission denied:', e);
+                    }
+                }, { once: true });
+
+                // Show tap hint for iOS
+                jumpLabel.textContent = 'TAP TO ENABLE';
+            } else {
+                // Android / desktop — no permission needed
+                startMotionListening();
+            }
+
+            function startMotionListening() {
+                window.addEventListener('devicemotion', (event) => {
+                    const accel = event.accelerationIncludingGravity;
+                    if (!accel) return;
+
+                    // Total acceleration magnitude (minus gravity baseline ~9.8)
+                    const totalAccel = Math.sqrt(accel.x ** 2 + accel.y ** 2 + accel.z ** 2);
+                    const netAccel = Math.abs(totalAccel - 9.8);
+
+                    // Rolling average to smooth out noise
+                    accelSamples.push(netAccel);
+                    if (accelSamples.length > SAMPLE_WINDOW) accelSamples.shift();
+                    const avgAccel = accelSamples.reduce((a, b) => a + b, 0) / accelSamples.length;
+
+                    // Update visual bar (0 to JUMP_THRESHOLD = 100%)
+                    const pct = Math.min(100, (avgAccel / JUMP_THRESHOLD) * 100);
+                    accelBarFill.style.width = pct + '%';
+
+                    // Detect jump
+                    if (avgAccel > JUMP_THRESHOLD) {
+                        triggerJump();
+                    }
+                });
+            }
+
+            // Fallback: tap to jump (for testing or when sensors unavailable)
+            jumpZone.addEventListener('click', () => {
+                triggerJump();
+            });
+        }
+
+        // ============================================
+        // SHADOW BREATH — BREATH CONTROLLER
+        // (Microphone + Proximity Sensor + Gyroscope)
+        // ============================================
+        function sendInteract() {
+            if (gameStarted) socket.emit('gesture', { action: 'INTERACT' });
+        }
+        function sendDash() {
+            if (gameStarted) socket.emit('gesture', { action: 'DASH' });
+        }
+
+        function initBreathController() {
+            const breathCircle = document.getElementById('breath-circle');
+            const breathIcon = document.getElementById('breath-icon');
+            const breathLabel = document.getElementById('breath-label');
+            const lungBarFill = document.getElementById('lung-bar-fill');
+            const micLevel = document.getElementById('breath-mic-level');
+
+            let isHoldingBreath = false;
+            let noiseFloor = 0.02; // will be calibrated
+            let calibrationSamples = [];
+            let calibrated = false;
+            let holdStartTime = 0;       // when silence started
+            let releaseCooldown = 0;      // cooldown after releasing
+            let smoothedRms = 0;          // smoothed mic level
+            let rmsSamples = [];          // rolling average buffer
+            const SMOOTH_WINDOW = 8;      // samples for smoothing
+            const MIN_HOLD_TIME = 400;    // ms of silence before activating
+            const RELEASE_COOLDOWN = 600; // ms before can re-trigger hold
+
+            // === 1. MICROPHONE — Breath Detection (using time-domain RMS) ===
+            async function initMic() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false
+                        }
+                    });
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioCtx.createMediaStreamSource(stream);
+                    const analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 512;
+                    analyser.smoothingTimeConstant = 0.3;
+                    source.connect(analyser);
+
+                    // Use time-domain data — much more reliable for breath detection
+                    const dataArray = new Float32Array(analyser.fftSize);
+
+                    breathLabel.textContent = 'CALIBRATING...';
+                    breathIcon.textContent = '⏳';
+
+                    function processAudio() {
+                        // Time-domain RMS (much better for detecting actual silence vs breathing)
+                        analyser.getFloatTimeDomainData(dataArray);
+                        let sum = 0;
+                        for (let i = 0; i < dataArray.length; i++) {
+                            sum += dataArray[i] * dataArray[i];
+                        }
+                        const rawRms = Math.sqrt(sum / dataArray.length);
+
+                        // Smooth the RMS with a rolling average
+                        rmsSamples.push(rawRms);
+                        if (rmsSamples.length > SMOOTH_WINDOW) rmsSamples.shift();
+                        smoothedRms = rmsSamples.reduce((a, b) => a + b, 0) / rmsSamples.length;
+
+                        // Calibration: first 2 seconds — sit silently
+                        if (!calibrated) {
+                            calibrationSamples.push(rawRms);
+                            const progress = Math.min(100, (calibrationSamples.length / 60) * 100);
+                            lungBarFill.style.width = progress + '%';
+                            if (calibrationSamples.length >= 60) {
+                                // Use median to be robust against outliers
+                                const sorted = [...calibrationSamples].sort((a, b) => a - b);
+                                const median = sorted[Math.floor(sorted.length / 2)];
+                                noiseFloor = median * 1.5; // threshold just above ambient noise
+                                // Ensure minimum threshold so it's not too sensitive
+                                noiseFloor = Math.max(noiseFloor, 0.005);
+                                calibrated = true;
+                                breathLabel.textContent = 'READY — HOLD BREATH';
+                                breathIcon.textContent = '🫁';
+                                lungBarFill.style.width = '100%';
+                            }
+                            requestAnimationFrame(processAudio);
+                            return;
+                        }
+
+                        // Update lung bar to show current mic level relative to threshold
+                        const levelPct = Math.min(100, (smoothedRms / (noiseFloor * 3)) * 100);
+                        lungBarFill.style.width = levelPct + '%';
+                        lungBarFill.style.background = smoothedRms < noiseFloor
+                            ? 'linear-gradient(90deg, #22cc66, #44ff88)'
+                            : 'linear-gradient(90deg, #4477ff, #66aaff)';
+
+                        // Use hysteresis: different thresholds for entering vs leaving hold
+                        const isSilent = smoothedRms < noiseFloor;
+                        const isLoud = smoothedRms > noiseFloor * 1.8; // need to be clearly louder to break hold
+                        const now = Date.now();
+
+                        // Update UI
+                        micLevel.textContent = `MIC: ${(smoothedRms * 1000).toFixed(0)}`;
+
+                        // Cooldown after releasing
+                        if (releaseCooldown > 0 && now < releaseCooldown) {
+                            requestAnimationFrame(processAudio);
+                            return;
+                        }
+
+                        if (isSilent && !isHoldingBreath) {
+                            // Start hold timer — need sustained silence
+                            if (holdStartTime === 0) {
+                                holdStartTime = now;
+                            }
+                            // Only activate after MIN_HOLD_TIME of sustained silence
+                            if (now - holdStartTime >= MIN_HOLD_TIME) {
+                                isHoldingBreath = true;
+                                breathCircle.className = 'breath-circle holding';
+                                breathIcon.textContent = '👻';
+                                breathLabel.textContent = 'INVISIBLE';
+                                socket.emit('gesture', { action: 'BREATH_HOLD' });
+                            }
+                        } else if (!isSilent) {
+                            holdStartTime = 0; // reset hold timer
+                        }
+
+                        if (isLoud && isHoldingBreath) {
+                            isHoldingBreath = false;
+                            holdStartTime = 0;
+                            releaseCooldown = now + RELEASE_COOLDOWN; // grace period
+                            breathCircle.className = 'breath-circle breathing';
+                            breathIcon.textContent = '🫁';
+                            breathLabel.textContent = 'BREATHING...';
+                            socket.emit('gesture', { action: 'BREATH_RELEASE' });
+                            // Reset to idle state after cooldown
+                            setTimeout(() => {
+                                if (!isHoldingBreath) {
+                                    breathCircle.className = 'breath-circle';
+                                    breathLabel.textContent = 'HOLD BREATH';
+                                    breathIcon.textContent = '🫁';
+                                }
+                            }, RELEASE_COOLDOWN);
+                        }
+
+                        requestAnimationFrame(processAudio);
+                    }
+
+                    processAudio();
+                } catch (err) {
+                    console.warn('Mic access denied:', err);
+                    breathLabel.textContent = 'MIC UNAVAILABLE';
+                    // Fallback: tap breath circle to toggle
+                    breathCircle.addEventListener('click', () => {
+                        isHoldingBreath = !isHoldingBreath;
+                        if (isHoldingBreath) {
+                            breathCircle.className = 'breath-circle holding';
+                            breathIcon.textContent = '👻';
+                            breathLabel.textContent = 'INVISIBLE';
+                            socket.emit('gesture', { action: 'BREATH_HOLD' });
+                        } else {
+                            breathCircle.className = 'breath-circle';
+                            breathIcon.textContent = '🫁';
+                            breathLabel.textContent = 'HOLD BREATH';
+                            socket.emit('gesture', { action: 'BREATH_RELEASE' });
+                        }
+                    });
+                }
+            }
+
+            // === 2. PROXIMITY SENSOR — Eagle Vision ===
+            function initProximity() {
+                if ('ProximitySensor' in window) {
+                    try {
+                        const sensor = new ProximitySensor();
+                        sensor.addEventListener('reading', () => {
+                            if (sensor.near) {
+                                socket.emit('gesture', { action: 'FOCUS_ON' });
+                            } else {
+                                socket.emit('gesture', { action: 'FOCUS_OFF' });
+                            }
+                        });
+                        sensor.start();
+                    } catch (e) {
+                        console.warn('Proximity sensor unavailable');
+                    }
+                } else if ('AmbientLightSensor' in window) {
+                    // Fallback: use ambient light
+                    try {
+                        const als = new AmbientLightSensor();
+                        als.addEventListener('reading', () => {
+                            if (als.illuminance < 5) {
+                                socket.emit('gesture', { action: 'FOCUS_ON' });
+                            } else {
+                                socket.emit('gesture', { action: 'FOCUS_OFF' });
+                            }
+                        });
+                        als.start();
+                    } catch (e) {
+                        console.warn('Light sensor unavailable');
+                    }
+                }
+            }
+
+            // === 3. GYROSCOPE / ACCELEROMETER — Movement ===
+            function initTilt() {
+                let tiltActive = false;
+
+                function startTilt() {
+                    if (tiltActive) return;
+                    tiltActive = true;
+
+                    let baseGamma = null, bassBeta = null;
+
+                    window.addEventListener('deviceorientation', (event) => {
+                        const gamma = event.gamma || 0; // left-right (-90 to 90)
+                        const beta = event.beta || 0;   // front-back (-180 to 180)
+
+                        // Set baseline on first reading
+                        if (baseGamma === null) {
+                            baseGamma = gamma;
+                            bassBeta = beta;
+                        }
+
+                        // Calculate relative tilt
+                        const dx = (gamma - baseGamma) / 30; // normalize to ~-1 to 1
+                        const dy = (beta - bassBeta) / 30;
+
+                        // Clamp
+                        const cx = Math.max(-1, Math.min(1, dx));
+                        const cy = Math.max(-1, Math.min(1, dy));
+
+                        // Dead zone
+                        const deadZone = 0.1;
+                        const mx = Math.abs(cx) > deadZone ? cx : 0;
+                        const my = Math.abs(cy) > deadZone ? cy : 0;
+
+                        // Send tilt data — INVERTED X so tilt-right = move-right
+                        socket.emit('tilt', { x: -mx, y: my });
+                    });
+                }
+
+                // iOS permission
+                if (typeof DeviceOrientationEvent !== 'undefined' &&
+                    typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    breathCircle.addEventListener('click', async () => {
+                        try {
+                            const perm = await DeviceOrientationEvent.requestPermission();
+                            if (perm === 'granted') startTilt();
+                        } catch (e) {
+                            console.warn('Orientation permission denied');
+                        }
+                    }, { once: true });
+                } else {
+                    startTilt();
+                }
+            }
+
+            // Initialize all sensors
+            initMic();
+            initProximity();
+            initTilt();
+
+        }
+    </script>
+
+</body>
+
+</html>

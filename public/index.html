@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Motion Arena — Gesture Gaming Platform</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 80px 0 60px;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(0, 229, 255, 0.15);
+      border-radius: 30px;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      margin-bottom: 32px;
+      font-weight: 500;
+      animation: fadeIn 0.6s ease;
+    }
+
+    .hero h1 {
+      font-family: var(--font-retro);
+      font-size: 2.8rem;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 50%, var(--accent-magenta) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: fadeIn 0.8s ease;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 48px;
+      line-height: 1.6;
+      animation: fadeIn 1s ease;
+    }
+
+    .hero-tagline {
+      font-family: var(--font-retro);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      padding: 40px 0 60px;
+    }
+
+    .how-it-works h2 {
+      font-family: var(--font-retro);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 40px;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+    }
+
+    .steps {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: center;
+      flex: 1;
+      min-width: 200px;
+      max-width: 260px;
+      transition: all 0.3s var(--ease-out);
+    }
+
+    .step:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-4px);
+    }
+
+    .step-num {
+      font-family: var(--font-retro);
+      font-size: 1.4rem;
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
+      text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    }
+
+    .step-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+
+    .step h3 {
+      font-family: var(--font-retro);
+      font-size: 0.6rem;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .step p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Game Sections */
+    .game-sections {
+      padding: 40px 0 80px;
+    }
+
+    .mode-section {
+      margin-bottom: 60px;
+    }
+
+    .mode-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .game-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-out);
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .game-card:hover::before {
+      opacity: 1;
+    }
+
+    .game-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), var(--glow-cyan);
+    }
+
+    .game-card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .game-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+
+    .game-icon.tetris {
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(0, 136, 170, 0.1));
+      border: 1px solid rgba(0, 229, 255, 0.2);
+    }
+
+    .game-card h3 {
+      font-family: var(--font-retro);
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+    }
+
+    .game-card .game-type {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .game-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .game-card-footer {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .game-card-footer span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Coming Soon Card */
+    .game-card.coming-soon {
+      opacity: 0.5;
+      cursor: default;
+      border-style: dashed;
+    }
+
+    .game-card.coming-soon:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--border-subtle);
+    }
+
+    .game-card.coming-soon::before {
+      display: none;
+    }
+
+    /* Footer */
+    .site-footer {
+      text-align: center;
+      padding: 40px 0;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .site-footer span {
+      color: var(--accent-cyan);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 1.6rem;
+      }
+
+      .steps {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .step {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">🎮 Gesture-Controlled Multiplayer</div>
+      <h1>MOTION<br>ARENA</h1>
+      <p class="hero-subtitle">
+        A cooperative & competitive gaming platform where two players use their phone cameras as gesture controllers. No
+        apps to install — just scan, connect, and play.
+      </p>
+      <p class="hero-tagline">✦ Camera · Gesture · Play ✦</p>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+      <h2>HOW IT WORKS</h2>
+      <div class="steps">
+        <div class="step fade-in">
+          <div class="step-num">01</div>
+          <div class="step-icon">🎯</div>
+          <h3>Pick a Game</h3>
+          <p>Choose from Rest or Active mode games below</p>
+        </div>
+        <div class="step fade-in" style="animation-delay: 0.1s">
+          <div class="step-num">02</div>
+          <div class="step-icon">📱</div>
+          <h3>Scan QR</h3>
+          <p>Both players scan the QR code with their phones</p>
+        </div>
+        <div class="step fade-in" style="animation-delay: 0.2s">
+          <div class="step-num">03</div>
+          <div class="step-icon">✋</div>
+          <h3>Gesture Control</h3>
+          <p>Your phone camera detects hand gestures as game inputs</p>
+        </div>
+        <div class="step fade-in" style="animation-delay: 0.3s">
+          <div class="step-num">04</div>
+          <div class="step-icon">🏆</div>
+          <h3>Play & Compete</h3>
+          <p>Game plays on the laptop — cooperate or compete!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Sections -->
+    <section class="game-sections">
+      <!-- REST MODE -->
+      <div class="mode-section">
+        <div class="section-header">
+          <span class="icon">🧘</span>
+          <h2>REST MODE</h2>
+          <span class="tag tag-rest">Low Intensity</span>
+        </div>
+        <div class="games-grid">
+          <a href="lobby.html?game=gastro-tetris" class="game-card" id="gastro-tetris">
+            <div class="game-card-header">
+              <div class="game-icon tetris">🧱</div>
+              <div>
+                <h3>Gastro Tetris</h3>
+                <span class="game-type">Puzzle · Competitive</span>
+              </div>
+            </div>
+            <p>Classic Tetris controlled by hand gestures. Fist to move left, point to move right, shaka to rotate —
+              race to outlast your opponent!</p>
+            <div class="game-card-footer">
+              <span>👥 2 Players</span>
+              <span>✋ Hand Gestures</span>
+              <span>⏱️ ~5 min</span>
+            </div>
+          </a>
+
+          <a href="lobby.html?game=shadow-breath" class="game-card" id="shadow-breath">
+            <div class="game-card-header">
+              <div class="game-icon"
+                style="background: linear-gradient(135deg, rgba(68, 119, 255, 0.15), rgba(100, 50, 200, 0.1)); border: 1px solid rgba(68, 119, 255, 0.2);">
+                🗡️</div>
+              <div>
+                <h3>Shadow Breath</h3>
+                <span class="game-type">Stealth · Breath Control</span>
+              </div>
+            </div>
+            <p>Hold your breath to become invisible! Sneak past guards in this retro stealth game
+              powered by your phone's microphone, proximity sensor, and gyroscope.</p>
+            <div class="game-card-footer">
+              <span>🧑 1 Player</span>
+              <span>🫁 Breath + Tilt</span>
+              <span>⏱️ ~3 min</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- ACTIVE MODE -->
+      <div class="mode-section">
+        <div class="section-header">
+          <span class="icon">🏃</span>
+          <h2>ACTIVE MODE</h2>
+          <span class="tag tag-active">High Intensity</span>
+        </div>
+        <div class="games-grid">
+          <a href="lobby.html?game=dino-dash" class="game-card" id="dino-dash">
+            <div class="game-card-header">
+              <div class="game-icon"
+                style="background: linear-gradient(135deg, rgba(83, 215, 105, 0.15), rgba(0, 136, 70, 0.1)); border: 1px solid rgba(83, 215, 105, 0.2);">
+                ⚔️</div>
+              <div>
+                <h3>Knight Dash</h3>
+                <span class="game-type">Endless Runner · Action</span>
+              </div>
+            </div>
+            <p>Jump in real life to make the knight jump! Dodge obstacles in this retro endless runner
+              powered by your phone sensors and body movement.</p>
+            <div class="game-card-footer">
+              <span>🧑 1 Player</span>
+              <span>🏃 Body Movement</span>
+              <span>⏱️ Endless</span>
+            </div>
+          </a>
+
+          <div class="game-card coming-soon">
+            <div class="game-card-header">
+              <div class="game-icon"
+                style="background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.1);">❓</div>
+              <div>
+                <h3>Coming Soon</h3>
+                <span class="game-type">More active games on the way</span>
+              </div>
+            </div>
+            <p>Stay tuned for new body-movement games added to Motion Arena.</p>
+            <div class="game-card-footer">
+              <span>🔜 In Development</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p><span>MOTION ARENA</span> — Built with ❤️ for cooperative play</p>
+    </footer>
+  </div>
+
+</body>
+
+</html>

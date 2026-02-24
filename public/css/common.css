@@ -1,0 +1,295 @@
+/* ===================================
+   MOTION ARENA — Design System
+   Minimalistic 2D Retro Aesthetic
+   =================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a25;
+  --bg-card-hover: #22222f;
+
+  --text-primary: #f0f0f5;
+  --text-secondary: #8888aa;
+  --text-muted: #555570;
+
+  --accent-cyan: #00e5ff;
+  --accent-magenta: #ff00e5;
+  --accent-green: #00ff88;
+  --accent-yellow: #ffdd00;
+  --accent-orange: #ff8800;
+  --accent-red: #ff3355;
+
+  --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.3);
+  --glow-magenta: 0 0 20px rgba(255, 0, 229, 0.3);
+  --glow-green: 0 0 20px rgba(0, 255, 136, 0.3);
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-accent: rgba(0, 229, 255, 0.3);
+
+  /* Typography */
+  --font-retro: 'Press Start 2P', monospace;
+  --font-ui: 'Inter', -apple-system, sans-serif;
+
+  /* Spacing */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Reset */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Background grid */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Utility Classes */
+.retro-text {
+  font-family: var(--font-retro);
+  letter-spacing: 1px;
+}
+
+.glow-text-cyan {
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 30px rgba(0, 229, 255, 0.2);
+}
+
+.glow-text-magenta {
+  text-shadow: 0 0 10px rgba(255, 0, 229, 0.5), 0 0 30px rgba(255, 0, 229, 0.2);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-retro);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-cyan), #0088aa);
+  color: var(--bg-primary);
+  box-shadow: var(--glow-cyan);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.5), 0 5px 20px rgba(0, 229, 255, 0.3);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-accent);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--glow-cyan);
+}
+
+.btn-start {
+  background: linear-gradient(135deg, var(--accent-green), #00aa55);
+  color: var(--bg-primary);
+  box-shadow: var(--glow-green);
+  font-size: 0.85rem;
+  padding: 18px 40px;
+}
+
+.btn-start:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 40px rgba(0, 255, 136, 0.5);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Card Styles */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: all 0.3s var(--ease-out);
+}
+
+.card:hover {
+  border-color: var(--border-accent);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), var(--glow-cyan);
+}
+
+/* Status indicators */
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.connected {
+  background: var(--accent-green);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.status-dot.waiting {
+  background: var(--accent-yellow);
+  box-shadow: 0 0 8px rgba(255, 221, 0, 0.6);
+  animation: pulse-yellow 1.5s ease-in-out infinite;
+}
+
+.status-dot.disconnected {
+  background: var(--accent-red);
+  box-shadow: 0 0 8px rgba(255, 51, 85, 0.6);
+}
+
+/* Animations */
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulse-yellow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scanline {
+  0% { top: -100%; }
+  100% { top: 100%; }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s var(--ease-out) forwards;
+}
+
+.slide-up {
+  animation: slideUp 0.8s var(--ease-out) forwards;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.section-header .icon {
+  font-size: 2rem;
+}
+
+.section-header h2 {
+  font-family: var(--font-retro);
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.section-header .tag {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.tag-rest {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.tag-active {
+  background: rgba(255, 0, 229, 0.1);
+  color: var(--accent-magenta);
+  border: 1px solid rgba(255, 0, 229, 0.2);
+}
