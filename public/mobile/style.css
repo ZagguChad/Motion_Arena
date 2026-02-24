@@ -1,194 +1,482 @@
-/* ── Base Reset ─────────────────────────────────────────── */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body {
-    width: 100%; height: 100%;
+/* ── Tower Siege — Mobile Controller Styles ── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    background: #0a0a0f;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    color: #e0e0e0;
-    touch-action: none;
-    -webkit-user-select: none;
+    background: #0a0a1a;
+    font-family: 'Press Start 2P', monospace;
+    color: #e6edf3;
     user-select: none;
 }
 
-/* ── Force Landscape Layout ───────────────────────────── */
-@media (orientation: portrait) {
-    html { transform: rotate(90deg); transform-origin: top left;
-        width: 100vh; height: 100vw;
-        position: absolute; top: 0; left: 100vw;
-    }
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
 }
 
-/* ── Screens ──────────────────────────────────────────── */
-.screen { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; }
-.screen.active { display: flex; flex-direction: column; }
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
 
-/* ── Loading ──────────────────────────────────────────── */
+.screen.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Loading Screen ── */
 #loadingScreen {
-    justify-content: center; align-items: center;
-    background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 100%);
+    background: #0d1117;
 }
-.loader-box { text-align: center; }
-.loader-spinner {
-    width: 50px; height: 50px; margin: 0 auto 20px;
-    border: 4px solid rgba(255,255,255,0.1);
-    border-top: 4px solid #4361ee;
+
+.loader-ring {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(230, 237, 243, 0.1);
+    border-top-color: #f5c542;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
-@keyframes spin { 100% { transform: rotate(360deg); } }
-.loader-text { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
-.loader-sub { font-size: 0.9rem; color: #888; white-space: pre-line; }
 
-/* ── Game Screen ──────────────────────────────────────── */
-#gameScreen { flex-direction: row; background: #0a0a0f; }
-
-.video-wrap {
-    position: relative; flex: 1; height: 100%;
-    background: #000; overflow: hidden;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
-.video-wrap video {
-    width: 100%; height: 100%;
+
+.loader-text {
+    margin-top: 20px;
+    font-size: 10px;
+    color: #f5c542;
+}
+
+.loader-sub {
+    margin-top: 8px;
+    font-size: 7px;
+    color: rgba(230, 237, 243, 0.4);
+}
+
+/* ── Game Screen ── */
+#gameScreen {
+    display: none;
+    position: relative;
+}
+
+#gameScreen.active {
+    display: block;
+}
+
+#video {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    /* No scaleX(-1) — side-view environment camera doesn't need mirroring */
 }
-.video-wrap canvas {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%;
+
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* No scaleX(-1) — matches un-mirrored video */
     pointer-events: none;
 }
 
-/* ── 3-2-1 Countdown Overlay ─────────────────────────── */
-.countdown-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: flex; justify-content: center; align-items: center;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 20;
-}
-.countdown-number {
-    font-size: 8rem; font-weight: 900;
-    color: #fff; text-shadow: 0 0 40px #4361ee, 0 0 80px #4361ee;
-    animation: pulse-count 0.8s ease-in-out infinite;
-}
-@keyframes pulse-count {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.3); opacity: 0.8; }
+/* ── HUD ── */
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    background: linear-gradient(180deg, rgba(13, 17, 23, 0.85) 0%, transparent 100%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
 }
 
-/* ── No Person Overlay ───────────────────────────────── */
-.no-person-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: flex; flex-direction: column;
-    justify-content: center; align-items: center;
-    background: rgba(239, 35, 60, 0.3);
-    z-index: 15;
-}
-.no-person-text { font-size: 1.5rem; font-weight: 700; color: #ef233c; }
-.no-person-timer { font-size: 1.1rem; color: #fff; margin-top: 10px; }
-
-/* ── HUD (right side panel) ──────────────────────────── */
-.hud {
-    width: 220px; padding: 12px;
-    display: flex; flex-direction: column; gap: 10px;
-    background: rgba(10, 10, 15, 0.95);
-    border-left: 2px solid #222;
-}
 .badge {
-    text-align: center; padding: 8px; border-radius: 8px;
-    font-weight: 700; font-size: 0.9rem;
-    background: rgba(100,100,100,0.2); color: #888;
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    border: 2px solid;
 }
-.badge.blue { background: rgba(67,97,238,0.25); color: #4361ee; }
-.badge.red { background: rgba(239,35,60,0.25); color: #ef233c; }
 
-.stat-row { display: flex; flex-direction: column; gap: 6px; }
-.stat-box { text-align: center; }
-.stat-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-.stat-value { font-size: 2.5rem; font-weight: 900; color: #fff; line-height: 1; }
-.stat-sub { font-size: 0.8rem; color: #aaa; }
-.state-indicator { font-size: 1rem; font-weight: 700; }
+.badge.blue {
+    background: rgba(67, 97, 238, 0.2);
+    border-color: #4361ee;
+    color: #4361ee;
+}
 
-.angle-bar {
-    height: 8px; border-radius: 4px;
-    background: rgba(255,255,255,0.08);
+.badge.red {
+    background: rgba(239, 35, 60, 0.2);
+    border-color: #ef233c;
+    color: #ef233c;
+}
+
+.big-count {
+    font-size: 48px;
+    font-weight: bold;
+    color: #f5c542;
+    text-shadow: 0 0 20px rgba(245, 197, 66, 0.5);
+    line-height: 1;
+}
+
+#pushupLabel {
+    font-size: 8px;
+    color: rgba(230, 237, 243, 0.5);
+    margin-top: 4px;
+    letter-spacing: 2px;
+}
+
+#soldiersCount {
+    font-size: 9px;
+    color: #2ea043;
+    margin-top: 8px;
+}
+
+#angleBar {
+    width: 80%;
+    max-width: 250px;
+    height: 10px;
+    background: rgba(230, 237, 243, 0.1);
+    border-radius: 5px;
+    margin: 10px auto 4px;
     overflow: hidden;
 }
-.angle-bar-fill {
-    height: 100%; width: 0%;
-    border-radius: 4px;
-    background: linear-gradient(90deg, #2ea043, #4ade80);
-    transition: width 0.15s;
+
+#angleBarFill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2ea043, #f5c542, #ef233c);
+    border-radius: 5px;
+    transition: width 0.1s ease;
 }
 
-.game-status {
-    text-align: center; font-size: 0.9rem;
-    font-weight: 700; color: #f5c542;
-    padding: 6px; border-radius: 6px;
-    background: rgba(245,197,66,0.1);
+#angleLabel {
+    font-size: 6px;
+    color: rgba(230, 237, 243, 0.3);
+    letter-spacing: 1px;
 }
 
-/* ── Ready Button ────────────────────────────────────── */
+#stateIndicator {
+    font-size: 12px;
+    margin-top: 8px;
+    color: #2ea043;
+    text-transform: uppercase;
+}
+
+/* ── Ready Button ── */
 .ready-btn {
-    position: fixed; bottom: 16px; right: 16px;
-    padding: 12px 28px; border: none; border-radius: 12px;
-    font-size: 1.1rem; font-weight: 800; cursor: pointer;
-    background: linear-gradient(135deg, #4361ee, #3a52d4);
-    color: #fff; z-index: 10;
-    box-shadow: 0 4px 20px rgba(67,97,238,0.4);
-}
-.ready-btn:active { transform: scale(0.95); }
-
-/* ── Deploy Mode Selector ────────────────────────────── */
-.deploy-selector {
-    position: fixed; bottom: 16px; left: 16px;
-    display: flex; gap: 8px; z-index: 10;
-}
-.mode-btn {
-    padding: 8px 16px; border: 2px solid #333; border-radius: 8px;
-    background: rgba(255,255,255,0.05); color: #888;
-    font-size: 0.85rem; font-weight: 700; cursor: pointer;
-}
-.mode-btn.active { border-color: #4361ee; color: #4361ee; background: rgba(67,97,238,0.15); }
-
-/* ── Head Indicator ──────────────────────────────────── */
-.head-indicator {
-    position: fixed; top: 16px; left: 50%;
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
     transform: translateX(-50%);
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 16px; border-radius: 20px;
-    background: rgba(0,0,0,0.7);
-    font-weight: 700; font-size: 1rem;
-    z-index: 10;
-}
-.deploy-badge {
-    position: fixed; top: 16px; right: 16px;
-    padding: 6px 12px; border-radius: 8px;
-    font-size: 0.75rem; font-weight: 700;
-    background: rgba(0,0,0,0.6); color: #aaa;
-    z-index: 10;
+    padding: 16px 32px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    background: linear-gradient(135deg, #2ea043, #1a7f37);
+    color: white;
+    border: 3px solid #3fb950;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 20;
+    animation: pulse-btn 1.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
 }
 
-/* ── Game Over ───────────────────────────────────────── */
+.ready-btn:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+.ready-btn.hidden {
+    display: none;
+}
+
+@keyframes pulse-btn {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(46, 160, 67, 0.6);
+    }
+}
+
+/* ── Game Status ── */
+.game-status {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 20px;
+    font-size: 8px;
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid rgba(230, 237, 243, 0.1);
+    border-radius: 4px;
+    z-index: 15;
+    white-space: nowrap;
+}
+
+.game-status.hidden {
+    display: none;
+}
+
+/* ── Game Over ── */
 #overScreen {
-    justify-content: center; align-items: center;
-    background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 100%);
+    background: #0d1117;
+    text-align: center;
 }
-.over-result { font-size: 3rem; font-weight: 900; margin-bottom: 16px; }
-.over-stats { font-size: 1.1rem; color: #aaa; text-align: center; line-height: 1.8; }
 
-/* ── Pushup Flash ────────────────────────────────────── */
+#overResult {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+#overStats {
+    font-size: 8px;
+    color: rgba(230, 237, 243, 0.5);
+    line-height: 1.8;
+}
+
+/* ── Flashes ── */
 .pushup-flash {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(46, 160, 67, 0.25); z-index: 30;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     pointer-events: none;
-    animation: flash-out 0.3s ease-out forwards;
+    z-index: 100;
+    animation: flash 0.3s ease-out forwards;
 }
-.target-flash {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(67, 97, 238, 0.2); z-index: 30;
-    pointer-events: none;
-    animation: flash-out 0.4s ease-out forwards;
-}
-@keyframes flash-out { to { opacity: 0; } }
 
-/* ── Hidden Utility ──────────────────────────────────── */
-.hidden { display: none !important; }
+@keyframes flash {
+    0% {
+        background: rgba(46, 160, 67, 0.3);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+/* ── Deploy Mode Selector ── */
+.deploy-mode-selector {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+}
+
+.mode-title {
+    font-size: 7px;
+    color: rgba(230, 237, 243, 0.5);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.mode-btn {
+    display: block;
+    width: 200px;
+    padding: 10px 16px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    background: rgba(30, 35, 50, 0.8);
+    color: rgba(230, 237, 243, 0.6);
+    border: 2px solid rgba(230, 237, 243, 0.15);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.mode-btn .mode-desc {
+    font-size: 6px;
+    color: rgba(230, 237, 243, 0.35);
+}
+
+.mode-btn.active {
+    background: rgba(46, 160, 67, 0.2);
+    border-color: #3fb950;
+    color: #3fb950;
+}
+
+.mode-btn.active .mode-desc {
+    color: rgba(63, 185, 80, 0.6);
+}
+
+.deploy-mode-selector.hidden {
+    display: none;
+}
+
+/* ── Deploy Badge (in-game) ── */
+.deploy-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    border-radius: 4px;
+    z-index: 15;
+    background: rgba(46, 160, 67, 0.2);
+    border: 1px solid #3fb950;
+    color: #3fb950;
+    pointer-events: none;
+}
+
+.deploy-badge.manual {
+    background: rgba(245, 197, 66, 0.2);
+    border-color: #f5c542;
+    color: #f5c542;
+}
+
+/* ── Head Direction Indicator ── */
+.head-indicator {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 15;
+    pointer-events: none;
+}
+
+.head-indicator.hidden {
+    display: none;
+}
+
+.head-arrow {
+    font-size: 32px;
+    transition: transform 0.15s ease;
+    text-shadow: 0 0 12px rgba(245, 197, 66, 0.8);
+}
+
+.head-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #f5c542;
+    margin-top: 4px;
+    letter-spacing: 1px;
+}
+
+/* ── No Person Warning ── */
+.no-person-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 10, 26, 0.88);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    animation: fadeIn 0.3s ease;
+}
+
+.no-person-overlay.hidden {
+    display: none;
+}
+
+.no-person-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.no-person-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: #ef233c;
+    margin-bottom: 16px;
+    text-shadow: 0 0 10px rgba(239, 35, 60, 0.5);
+}
+
+.no-person-timer {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 48px;
+    color: #f5c542;
+    text-shadow: 0 0 20px rgba(245, 197, 66, 0.6);
+    animation: pulse-timer 1s ease-in-out infinite;
+}
+
+.no-person-sub {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: rgba(230, 237, 243, 0.4);
+    margin-top: 16px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-timer {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+/* ── Target Flash (manual confirm) ── */
+.target-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 100;
+    animation: targetFlash 0.4s ease-out forwards;
+}
+
+@keyframes targetFlash {
+    0% {
+        background: rgba(245, 197, 66, 0.4);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
