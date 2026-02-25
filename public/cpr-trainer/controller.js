@@ -1,11 +1,11 @@
 // ============================================================
 // CPR TRAINER — Mobile Controller (Socket.IO)
-// Accelerometer-Based Compression Detection
-// Ported from original standalone controller.js
+// Calibration + Accelerometer + Gyroscope
 // ============================================================
 
 // ── DOM Elements ────────────────────────────────────────────
 const loadingScreen = document.getElementById('loadingScreen');
+const calibScreen = document.getElementById('calibScreen');
 const setupScreen = document.getElementById('setupScreen');
 const gameScreen = document.getElementById('gameScreen');
 const overScreen = document.getElementById('overScreen');
@@ -13,6 +13,11 @@ const overScreen = document.getElementById('overScreen');
 const loaderText = document.querySelector('.loader-text');
 const loaderSub = document.querySelector('.loader-sub');
 
+const calibStatus = document.getElementById('calibStatus');
+const calibCount = document.getElementById('calibCount');
+const calibProgress = document.getElementById('calibProgress');
+
+const difficultyBtns = document.querySelectorAll('.diff-btn');
 const readyBtn = document.getElementById('readyBtn');
 const timerDisplay = document.getElementById('timerDisplay');
 const compressionCount = document.getElementById('compressionCount');
@@ -21,9 +26,11 @@ const bpmValue = document.getElementById('bpmValue');
 const depthFill = document.getElementById('depthFill');
 const depthValue = document.getElementById('depthValue');
 const metronomeBtn = document.getElementById('metronomeBtn');
+const tiltIndicator = document.getElementById('tiltIndicator');
 
 const overGrade = document.getElementById('overGrade');
 const overScore = document.getElementById('overScore');
+const overSurvival = document.getElementById('overSurvival');
 const overStats = document.getElementById('overStats');
 const overTips = document.getElementById('overTips');
 
@@ -32,12 +39,27 @@ let socket = null;
 let sessionId = null;
 let isGameActive = false;
 let compressions = 0;
+let selectedDifficulty = 'beginner';
 
 // ── Sensor Processing State ─────────────────────────────────
 let sensorReady = false;
-let calibrating = true;
-let calibrationSamples = [];
-const CALIBRATION_COUNT = 60;           // ~1 second at 60Hz
+let gyroReady = false;
+
+// ── Calibration State ───────────────────────────────────────
+let calibPhase = 'waiting';  // 'waiting', 'collecting', 'done'
+let calibPeaks = [];
+let calibReleases = [];
+let calibSmoothZ = 0;
+let calibPrevSmooth = 0;
+let calibDetecting = false;
+let calibPeakVal = 0;
+let calibReleaseVal = 0;
+const CALIB_REQUIRED = 3;
+const CALIB_RAW_THRESHOLD = -1.5;  // initial weak threshold for calibration detection
+
+// ── Dynamic Thresholds (set by calibration) ─────────────────
+let PRESS_THRESHOLD = -2.0;
+let RELEASE_THRESHOLD = 1.5;
 
 // Gravity removal (high-pass filter)
 let gravityZ = 0;
@@ -48,10 +70,8 @@ let smoothAccZ = 0;
 const SMOOTH_ALPHA = 0.3;
 
 // Compression detection (Schmitt trigger)
-let compressionState = 'idle';         // 'idle', 'pressing', 'releasing'
-const PRESS_THRESHOLD = -3.0;          // m/s² — downward acceleration to start press
-const RELEASE_THRESHOLD = 2.0;         // m/s² — upward acceleration for release
-const MIN_COMPRESSION_INTERVAL = 300;  // ms — fastest allowed (200 BPM cap)
+let compressionState = 'idle';
+const MIN_COMPRESSION_INTERVAL = 300;
 let lastCompressionTime = 0;
 
 // Depth estimation via double integration
@@ -59,9 +79,9 @@ let velocityZ = 0;
 let displacementZ = 0;
 let integrating = false;
 let integrationStartTime = 0;
-const MAX_INTEGRATION_TIME = 800;      // ms — max compression duration
-const DEPTH_SCALE = 100;               // convert m to cm
-const DRIFT_DECAY = 0.95;             // velocity drift correction
+const MAX_INTEGRATION_TIME = 800;
+const DEPTH_SCALE = 50;
+const DRIFT_DECAY = 0.92;
 
 // Recoil tracking
 let peakDisplacement = 0;
@@ -73,6 +93,12 @@ let currentBPM = 0;
 
 // Peak tracking for depth
 let recentDepths = [];
+
+// ── Gyroscope State ─────────────────────────────────────────
+let currentTiltBeta = 0;   // front-back
+let currentTiltGamma = 0;  // left-right
+let tiltWarning = false;
+const TILT_WARN_ANGLE = 15;  // degrees
 
 // ── Metronome ───────────────────────────────────────────────
 let metronomeOn = false;
@@ -118,14 +144,25 @@ function toggleMetronome() {
 
 metronomeBtn.addEventListener('click', toggleMetronome);
 
+// ── Difficulty Selection ────────────────────────────────────
+difficultyBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        difficultyBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedDifficulty = btn.dataset.diff;
+    });
+});
+
 // ── Screen Management ───────────────────────────────────────
 function showScreen(name) {
     loadingScreen.classList.remove('active');
+    calibScreen.classList.remove('active');
     setupScreen.classList.remove('active');
     gameScreen.classList.remove('active');
     overScreen.classList.remove('active');
 
     if (name === 'loading') loadingScreen.classList.add('active');
+    if (name === 'calib') calibScreen.classList.add('active');
     if (name === 'setup') setupScreen.classList.add('active');
     if (name === 'game') gameScreen.classList.add('active');
     if (name === 'over') overScreen.classList.add('active');
@@ -148,6 +185,92 @@ function flashCompression(quality) {
     if (quality === 'perfect') flash.classList.add('perfect');
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 200);
+}
+
+// ── Calibration Motion Handler ──────────────────────────────
+function handleCalibrationMotion(event) {
+    const accWithGravity = event.accelerationIncludingGravity;
+    const acc = event.acceleration;
+    if (!accWithGravity) return;
+
+    let rawZ;
+    if (acc && acc.z !== null && acc.z !== undefined) {
+        rawZ = acc.z;
+    } else {
+        gravityZ = GRAVITY_ALPHA * gravityZ + (1 - GRAVITY_ALPHA) * accWithGravity.z;
+        rawZ = accWithGravity.z - gravityZ;
+    }
+
+    calibPrevSmooth = calibSmoothZ;
+    calibSmoothZ = SMOOTH_ALPHA * rawZ + (1 - SMOOTH_ALPHA) * calibSmoothZ;
+
+    if (calibPhase !== 'collecting') return;
+
+    // Detect downward peak
+    if (!calibDetecting && calibSmoothZ < CALIB_RAW_THRESHOLD) {
+        calibDetecting = true;
+        calibPeakVal = calibSmoothZ;
+        calibReleaseVal = 0;
+    }
+
+    if (calibDetecting) {
+        // Track peak downward
+        if (calibSmoothZ < calibPeakVal) {
+            calibPeakVal = calibSmoothZ;
+        }
+
+        // Track peak upward (release)
+        if (calibSmoothZ > calibReleaseVal) {
+            calibReleaseVal = calibSmoothZ;
+        }
+
+        // Compression completed when signal returns near zero
+        if (calibSmoothZ > -0.5 && calibPrevSmooth > -0.5 && calibReleaseVal > 0.5) {
+            calibDetecting = false;
+            calibPeaks.push(calibPeakVal);
+            calibReleases.push(calibReleaseVal);
+
+            const count = calibPeaks.length;
+            if (calibCount) calibCount.textContent = `${count}/${CALIB_REQUIRED}`;
+            if (calibProgress) calibProgress.style.width = `${(count / CALIB_REQUIRED) * 100}%`;
+
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            console.log(`[Calib] Push ${count}: peak=${calibPeakVal.toFixed(2)}, release=${calibReleaseVal.toFixed(2)}`);
+
+            if (count >= CALIB_REQUIRED) {
+                finishCalibration();
+            }
+        }
+    }
+}
+
+function finishCalibration() {
+    calibPhase = 'done';
+
+    // Calculate dynamic thresholds from calibration data
+    const avgPeak = calibPeaks.reduce((a, b) => a + b, 0) / calibPeaks.length;
+    const avgRelease = calibReleases.reduce((a, b) => a + b, 0) / calibReleases.length;
+
+    PRESS_THRESHOLD = avgPeak * 0.6;   // 60% of avg peak
+    RELEASE_THRESHOLD = avgRelease * 0.5; // 50% of avg release
+
+    // Safety bounds
+    PRESS_THRESHOLD = Math.min(-0.8, Math.max(-8.0, PRESS_THRESHOLD));
+    RELEASE_THRESHOLD = Math.max(0.3, Math.min(5.0, RELEASE_THRESHOLD));
+
+    console.log(`[Calib] Done! PRESS_THRESHOLD=${PRESS_THRESHOLD.toFixed(2)}, RELEASE_THRESHOLD=${RELEASE_THRESHOLD.toFixed(2)}`);
+
+    if (calibStatus) calibStatus.textContent = '✅ Calibration Complete!';
+    if (calibCount) calibCount.textContent = 'Done!';
+
+    // Switch sensor handler to game mode
+    window.removeEventListener('devicemotion', handleCalibrationMotion, true);
+    smoothAccZ = 0;
+
+    // Brief delay then show setup
+    setTimeout(() => showScreen('setup'), 800);
 }
 
 // ── Sensor Initialization ───────────────────────────────────
@@ -173,8 +296,8 @@ async function initSensors() {
         }
     }
 
-    // Attach sensor listener
-    window.addEventListener('devicemotion', handleMotion, true);
+    // Attach calibration handler first
+    window.addEventListener('devicemotion', handleCalibrationMotion, true);
 
     // Verify we get data
     return new Promise((resolve) => {
@@ -200,16 +323,57 @@ async function initSensors() {
     });
 }
 
-// ── Motion Event Handler ────────────────────────────────────
+// ── Gyroscope Initialization ────────────────────────────────
+function initGyroscope() {
+    if ('DeviceOrientationEvent' in window) {
+        // iOS permission
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then(perm => {
+                if (perm === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation, true);
+                    gyroReady = true;
+                }
+            }).catch(() => { });
+        } else {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            gyroReady = true;
+        }
+    }
+    console.log('[Sensor] Gyroscope:', gyroReady ? 'active' : 'unavailable');
+}
+
+function handleOrientation(event) {
+    currentTiltBeta = event.beta || 0;   // -180 to 180 (front-back)
+    currentTiltGamma = event.gamma || 0; // -90 to 90 (left-right)
+
+    // For phone face-down, beta should be near ±180 and gamma near 0
+    // We care about deviation from the resting position
+    const absBeta = Math.abs(currentTiltBeta);
+    const adjustedBeta = absBeta > 90 ? Math.abs(180 - absBeta) : absBeta;
+    const absGamma = Math.abs(currentTiltGamma);
+
+    tiltWarning = (adjustedBeta > TILT_WARN_ANGLE || absGamma > TILT_WARN_ANGLE);
+
+    if (tiltIndicator) {
+        if (tiltWarning) {
+            tiltIndicator.textContent = `📐 Tilt: ${adjustedBeta.toFixed(0)}°/${absGamma.toFixed(0)}° — Straighten!`;
+            tiltIndicator.style.color = '#ef4444';
+        } else {
+            tiltIndicator.textContent = `✅ Hand angle OK`;
+            tiltIndicator.style.color = '#4ade80';
+        }
+    }
+}
+
+// ── Game Motion Handler ─────────────────────────────────────
 function handleMotion(event) {
-    if (!sensorReady) return;
+    if (!sensorReady || !isGameActive) return;
 
     const accWithGravity = event.accelerationIncludingGravity;
     const acc = event.acceleration;
 
     if (!accWithGravity) return;
 
-    // Use linear acceleration if available, otherwise high-pass filter
     let rawZ;
     if (acc && acc.z !== null && acc.z !== undefined) {
         rawZ = acc.z;
@@ -218,22 +382,10 @@ function handleMotion(event) {
         rawZ = accWithGravity.z - gravityZ;
     }
 
-    // ── Calibration Phase ───────────────────────────────────
-    if (calibrating) {
-        calibrationSamples.push(rawZ);
-        if (calibrationSamples.length >= CALIBRATION_COUNT) {
-            const mean = calibrationSamples.reduce((a, b) => a + b, 0) / calibrationSamples.length;
-            smoothAccZ = mean;
-            calibrating = false;
-            console.log(`[Sensor] Calibrated — baseline Z: ${mean.toFixed(3)}`);
-        }
-        return;
-    }
-
-    // ── Low-pass filter for noise reduction ─────────────────
+    // Low-pass filter
     smoothAccZ = SMOOTH_ALPHA * rawZ + (1 - SMOOTH_ALPHA) * smoothAccZ;
 
-    // ── Schmitt Trigger Compression Detection ───────────────
+    // Schmitt Trigger Compression Detection
     const now = Date.now();
     const dt = event.interval ? event.interval / 1000 : 1 / 60;
 
@@ -246,7 +398,6 @@ function handleMotion(event) {
                 velocityZ = 0;
                 displacementZ = 0;
                 peakDisplacement = 0;
-                console.log(`[Compression] Press detected — acc: ${smoothAccZ.toFixed(2)}`);
             }
             break;
 
@@ -283,13 +434,13 @@ function handleMotion(event) {
                     compressionState = 'idle';
 
                     let depth = Math.abs(peakDisplacement) * DEPTH_SCALE;
-                    depth = Math.max(0.5, Math.min(10, depth * 3.0));
+                    depth = Math.max(0.5, Math.min(10, depth * 1.2));
 
                     let recoilQuality = 0;
                     if (Math.abs(peakDisplacement) > 0.001) {
                         recoilQuality = Math.min(1.0, Math.abs(recoilDisplacement) / Math.abs(peakDisplacement));
                     }
-                    recoilQuality = Math.min(1.0, recoilQuality * 1.2 + 0.3);
+                    recoilQuality = Math.min(1.0, recoilQuality * 1.1 + 0.15);
 
                     if (now - lastCompressionTime >= MIN_COMPRESSION_INTERVAL || lastCompressionTime === 0) {
                         const interval = lastCompressionTime > 0 ? now - lastCompressionTime : 0;
@@ -343,7 +494,10 @@ function registerCompression(depth, recoil, interval) {
     let feedback = '';
     let fbClass = 'good';
 
-    if (rateOK && depthOK && recoilOK) {
+    if (tiltWarning) {
+        feedback = '📐 Straighten Hands!';
+        fbClass = 'warning';
+    } else if (rateOK && depthOK && recoilOK) {
         feedback = '⭐ PERFECT!';
         fbClass = 'perfect';
     } else if (depth < 4) {
@@ -380,11 +534,16 @@ function registerCompression(depth, recoil, interval) {
         }
     }
 
-    // Send to server via Socket.IO
+    // Send to server via Socket.IO with tilt angle
     if (socket && isGameActive) {
+        const absBeta = Math.abs(currentTiltBeta);
+        const adjustedBeta = absBeta > 90 ? Math.abs(180 - absBeta) : absBeta;
+        const tiltAngle = Math.max(adjustedBeta, Math.abs(currentTiltGamma));
+
         socket.emit('cpr-compression', {
             depth: Math.round(depth * 10) / 10,
             recoil: Math.round(recoil * 100) / 100,
+            tiltAngle: Math.round(tiltAngle),
         });
     }
 
@@ -414,7 +573,6 @@ function initSocket() {
                     return;
                 }
                 console.log('[Socket] Joined as player', response.playerNum);
-                // Sensor init will happen after this
             });
         } else {
             setStatusError('No Session', 'No session ID found in URL.');
@@ -428,36 +586,40 @@ function initSocket() {
 
     // Game started — switch to game screen
     socket.on('game-started', () => {
-        isGameActive = true;
-        compressions = 0;
-        recentIntervals = [];
-        recentDepths = [];
-        currentBPM = 0;
-        lastCompressionTime = 0;
-        compressionCount.textContent = '0';
-        bpmValue.textContent = '--';
-        depthFill.style.width = '0%';
-        depthValue.textContent = '-- cm';
-        feedbackText.textContent = 'Push down!';
-        feedbackText.className = 'feedback-text';
+        startGameOnPhone();
+    });
 
-        showScreen('game');
+    // CPR engine game-start signal
+    socket.on('cpr-game-start', (msg) => {
+        startGameOnPhone(msg.timer);
+    });
 
-        // Start countdown display on phone
-        let phoneTimer = 60;
-        const phoneTimerInterval = setInterval(() => {
-            phoneTimer--;
-            const mins = Math.floor(phoneTimer / 60);
-            const secs = phoneTimer % 60;
-            timerDisplay.textContent = `⏱ ${mins}:${secs.toString().padStart(2, '0')}`;
-            if (phoneTimer <= 10) timerDisplay.style.color = '#ef4444';
-            if (phoneTimer <= 0) clearInterval(phoneTimerInterval);
-        }, 1000);
+    // Push/Release rhythm guidance from server
+    socket.on('cpr-game-state', (state) => {
+        if (!isGameActive) return;
+        if (state.config && state.config.showPushRelease && state.rhythmPhase) {
+            const phase = state.rhythmPhase;
+            const guideEl = document.getElementById('rhythmGuide');
+            if (guideEl) {
+                if (phase === 'push') {
+                    guideEl.textContent = '⬇ PUSH!';
+                    guideEl.style.color = '#ef4444';
+                    guideEl.style.textShadow = '0 0 20px rgba(239,68,68,0.6)';
+                    document.body.style.borderColor = 'rgba(239,68,68,0.3)';
+                } else {
+                    guideEl.textContent = '⬆ RELEASE!';
+                    guideEl.style.color = '#4ade80';
+                    guideEl.style.textShadow = '0 0 20px rgba(74,222,128,0.6)';
+                    document.body.style.borderColor = 'rgba(74,222,128,0.3)';
+                }
+            }
+        }
     });
 
     // Game over
     socket.on('cpr-game-over', (msg) => {
         isGameActive = false;
+        window.removeEventListener('devicemotion', handleMotion, true);
         if (metronomeOn) toggleMetronome();
         showScreen('over');
 
@@ -466,11 +628,20 @@ function initSocket() {
         overGrade.style.color = gradeColors[msg.grade] || '#e74c6f';
         overScore.textContent = `Score: ${msg.score || 0}/100`;
 
+        // Survival probability
+        if (overSurvival) {
+            const sp = msg.survivalProbability || 0;
+            overSurvival.textContent = `Survival Probability: ${sp}%`;
+            overSurvival.style.color = sp >= 70 ? '#4ade80' : sp >= 40 ? '#fbbf24' : '#ef4444';
+        }
+
         overStats.innerHTML = `
             <div class="stat-row"><span class="stat-label">Total Compressions</span><span class="stat-value">${msg.totalCompressions || 0}</span></div>
             <div class="stat-row"><span class="stat-label">Average BPM</span><span class="stat-value">${msg.avgBPM || '--'}</span></div>
             <div class="stat-row"><span class="stat-label">Average Depth</span><span class="stat-value">${msg.avgDepth || '--'} cm</span></div>
             <div class="stat-row"><span class="stat-label">Average Recoil</span><span class="stat-value">${msg.avgRecoil || '--'}%</span></div>
+            <div class="stat-row"><span class="stat-label">Patient Status</span><span class="stat-value">${msg.patientAlive ? '💚 Alive' : '💔 Lost'}</span></div>
+            <div class="stat-row"><span class="stat-label">Difficulty</span><span class="stat-value">${(msg.difficulty || 'beginner').charAt(0).toUpperCase() + (msg.difficulty || 'beginner').slice(1)}</span></div>
         `;
 
         overTips.innerHTML = '';
@@ -497,10 +668,43 @@ function initSocket() {
     });
 }
 
+// ── Start Game on Phone ─────────────────────────────────────
+function startGameOnPhone(timer = 120) {
+    if (isGameActive) return;
+    isGameActive = true;
+    compressions = 0;
+    recentIntervals = [];
+    recentDepths = [];
+    currentBPM = 0;
+    lastCompressionTime = 0;
+    compressionCount.textContent = '0';
+    bpmValue.textContent = '--';
+    depthFill.style.width = '0%';
+    depthValue.textContent = '-- cm';
+    feedbackText.textContent = 'Push down!';
+    feedbackText.className = 'feedback-text';
+
+    // Attach game motion handler
+    window.addEventListener('devicemotion', handleMotion, true);
+
+    showScreen('game');
+
+    // Start countdown display on phone
+    let phoneTimer = timer;
+    const phoneTimerInterval = setInterval(() => {
+        phoneTimer--;
+        const mins = Math.floor(phoneTimer / 60);
+        const secs = phoneTimer % 60;
+        timerDisplay.textContent = `⏱ ${mins}:${secs.toString().padStart(2, '0')}`;
+        if (phoneTimer <= 15) timerDisplay.style.color = '#ef4444';
+        if (phoneTimer <= 0) clearInterval(phoneTimerInterval);
+    }, 1000);
+}
+
 // ── Ready Button ────────────────────────────────────────────
 readyBtn.addEventListener('click', () => {
     if (socket && socket.connected) {
-        socket.emit('cpr-player-ready');
+        socket.emit('cpr-player-ready', { difficulty: selectedDifficulty });
         readyBtn.textContent = '✅ READY — Waiting for game...';
         readyBtn.style.background = 'rgba(46, 160, 67, 0.3)';
         readyBtn.style.pointerEvents = 'none';
@@ -511,7 +715,7 @@ readyBtn.addEventListener('click', () => {
 async function init() {
     showScreen('loading');
 
-    // Step 1: Check secure context (sensors need HTTPS)
+    // Step 1: Check secure context
     if (!window.isSecureContext) {
         const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
         if (!isLocalhost) {
@@ -529,11 +733,15 @@ async function init() {
     const sensorsOK = await initSensors();
     if (!sensorsOK) return;
 
-    // Step 4: Ready!
-    setStatus('✅ Sensors Ready!', 'Switching to setup...');
+    // Step 4: Initialize gyroscope
+    initGyroscope();
+
+    // Step 5: Enter calibration
+    setStatus('✅ Sensors Ready!', 'Starting calibration...');
     await new Promise(r => setTimeout(r, 500));
 
-    showScreen('setup');
+    calibPhase = 'collecting';
+    showScreen('calib');
 }
 
 init();

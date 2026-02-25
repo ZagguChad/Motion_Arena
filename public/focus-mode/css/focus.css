@@ -1,0 +1,445 @@
+/* ===================================
+   FOCUS MODE — Student Focus Timer
+   Purple/Blue Calming Theme
+   =================================== */
+
+:root {
+    --focus-primary: #6c5ce7;
+    --focus-secondary: #a29bfe;
+    --focus-accent: #00cec9;
+    --focus-warn: #fdcb6e;
+    --focus-danger: #e17055;
+    --focus-bg: #0a0a14;
+    --focus-card: rgba(108, 92, 231, 0.08);
+    --focus-border: rgba(108, 92, 231, 0.2);
+    --focus-glow: 0 0 30px rgba(108, 92, 231, 0.3);
+}
+
+/* Timer Ring */
+.timer-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 30px;
+}
+
+.timer-ring {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.timer-ring-bg {
+    fill: none;
+    stroke: rgba(108, 92, 231, 0.15);
+    stroke-width: 8;
+}
+
+.timer-ring-progress {
+    fill: none;
+    stroke: url(#timerGradient);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear;
+}
+
+.timer-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.timer-display {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.8rem;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(108, 92, 231, 0.5);
+    letter-spacing: 3px;
+}
+
+.timer-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    color: var(--focus-secondary);
+    letter-spacing: 3px;
+    margin-top: 8px;
+}
+
+/* Control Buttons */
+.focus-controls {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.focus-btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.focus-btn-start {
+    background: linear-gradient(135deg, var(--focus-primary), #5a4bd1);
+    color: white;
+    box-shadow: var(--focus-glow);
+}
+
+.focus-btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(108, 92, 231, 0.5);
+}
+
+.focus-btn-reset {
+    background: rgba(108, 92, 231, 0.1);
+    color: var(--focus-secondary);
+    border: 1px solid var(--focus-border);
+}
+
+.focus-btn-reset:hover {
+    background: rgba(108, 92, 231, 0.2);
+}
+
+/* Stats Grid */
+.focus-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+    padding: 0 16px;
+}
+
+.focus-stat {
+    background: var(--focus-card);
+    border: 1px solid var(--focus-border);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+}
+
+.focus-stat-value {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.1rem;
+    color: var(--focus-secondary);
+    text-shadow: 0 0 10px rgba(108, 92, 231, 0.4);
+}
+
+.focus-stat-label {
+    font-size: 0.65rem;
+    color: rgba(162, 155, 254, 0.6);
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+}
+
+/* Posture Alert */
+.posture-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(225, 112, 85, 0.95), rgba(214, 48, 49, 0.95));
+    color: white;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 2px;
+    z-index: 200;
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 20px rgba(225, 112, 85, 0.4);
+}
+
+.posture-alert.visible {
+    transform: translateY(0);
+}
+
+/* Break Overlay */
+.break-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 10, 20, 0.95);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 150;
+    text-align: center;
+    padding: 24px;
+}
+
+.break-overlay.visible {
+    display: flex;
+}
+
+.break-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: float 2s ease-in-out infinite;
+}
+
+.break-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.7rem;
+    color: var(--focus-accent);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+}
+
+.break-instruction {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: 300px;
+    margin-bottom: 20px;
+}
+
+.break-timer {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.5rem;
+    color: var(--focus-accent);
+    text-shadow: 0 0 20px rgba(0, 206, 201, 0.5);
+}
+
+.break-skip {
+    margin-top: 20px;
+    padding: 10px 24px;
+    background: rgba(0, 206, 201, 0.1);
+    border: 1px solid rgba(0, 206, 201, 0.3);
+    border-radius: 8px;
+    color: var(--focus-accent);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+/* Breath Reset Game */
+.breath-game {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, #0a0814, #120a24);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 160;
+    text-align: center;
+    padding: 24px;
+}
+
+.breath-game.visible {
+    display: flex;
+}
+
+.breath-circle {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 3px solid rgba(108, 92, 231, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s ease;
+    position: relative;
+}
+
+.breath-circle.inhale {
+    transform: scale(1.3);
+    border-color: var(--focus-accent);
+    background: rgba(0, 206, 201, 0.08);
+    box-shadow: 0 0 60px rgba(0, 206, 201, 0.2);
+}
+
+.breath-circle.hold {
+    border-color: var(--focus-primary);
+    background: rgba(108, 92, 231, 0.08);
+    box-shadow: 0 0 40px rgba(108, 92, 231, 0.2);
+}
+
+.breath-circle.exhale {
+    transform: scale(0.8);
+    border-color: var(--focus-secondary);
+    background: rgba(162, 155, 254, 0.05);
+}
+
+.breath-phase {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.6rem;
+    color: white;
+    letter-spacing: 3px;
+}
+
+.breath-counter {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 2rem;
+    color: var(--focus-secondary);
+    margin-top: 24px;
+}
+
+.breath-rounds {
+    font-size: 0.75rem;
+    color: rgba(162, 155, 254, 0.5);
+    margin-top: 12px;
+}
+
+/* Session Phase Indicator */
+.phase-indicator {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.phase-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(108, 92, 231, 0.2);
+    transition: all 0.3s;
+}
+
+.phase-dot.active {
+    background: var(--focus-primary);
+    box-shadow: 0 0 10px rgba(108, 92, 231, 0.5);
+}
+
+.phase-dot.completed {
+    background: var(--focus-accent);
+    box-shadow: 0 0 10px rgba(0, 206, 201, 0.5);
+}
+
+/* Game Page Styles */
+.focus-game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px;
+    background: var(--focus-bg);
+}
+
+.focus-game-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.focus-game-header h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2rem;
+    background: linear-gradient(135deg, var(--focus-primary), var(--focus-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+}
+
+.focus-game-header .subtitle {
+    color: rgba(162, 155, 254, 0.6);
+    font-size: 0.85rem;
+}
+
+.focus-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 800px;
+    width: 100%;
+}
+
+.focus-panel {
+    background: var(--focus-card);
+    border: 1px solid var(--focus-border);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.focus-panel-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: var(--focus-secondary);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+}
+
+.connected-students {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.student-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(108, 92, 231, 0.15);
+    border: 1px solid rgba(108, 92, 231, 0.25);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--focus-secondary);
+}
+
+.student-chip .status-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.student-chip .status-indicator.focusing {
+    background: var(--focus-accent);
+    box-shadow: 0 0 6px rgba(0, 206, 201, 0.5);
+}
+
+.student-chip .status-indicator.break {
+    background: var(--focus-warn);
+    box-shadow: 0 0 6px rgba(253, 203, 110, 0.5);
+}
+
+/* Animations */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes breathPulse {
+
+    0%,
+    100% {
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}

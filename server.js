@@ -11,6 +11,7 @@ const { execSync } = require('child_process');
 // Game Engines
 const { CprEngine } = require('./engines/cpr-engine');
 const { TowerSiegeEngine } = require('./engines/tower-siege-engine');
+const { PlankEngine } = require('./engines/plank-engine');
 
 const app = express();
 
@@ -191,10 +192,15 @@ app.get('/api/qr/:sessionId', async (req, res) => {
     const protocol = httpsServer ? 'https' : 'http';
     const gameName = req.query.game || '';
 
-    // Route CPR Trainer and Tower Siege to their dedicated controller pages
+    // Route games to their dedicated controller pages
     const controllerMap = {
         'cpr-trainer': '/cpr-trainer/controller.html',
-        'tower-siege': '/tower-siege/controller.html'
+        'tower-siege': '/tower-siege/controller.html',
+        'focus-mode': '/focus-mode/controller.html',
+        'plank-wars': '/plank-wars/controller.html',
+        'gravity-bridge': '/gravity-bridge/controller.html',
+        'rhythm-pulse': '/rhythm-pulse/controller.html',
+        'balance-duel': '/balance-duel/controller.html'
     };
     const controllerPath = controllerMap[gameName] || '/controller.html';
 
@@ -310,7 +316,11 @@ function socketHandler(socket) {
         const session = sessions[socket.sessionId];
         if (!session || !session.gameEngine) return;
         if (session.game !== 'cpr-trainer') return;
-        session.gameEngine.processCompression(data);
+        session.gameEngine.processCompression({
+            depth: data.depth || 0,
+            recoil: data.recoil || 0,
+            tiltAngle: data.tiltAngle || 0,
+        });
     });
 
     // Simulated compression from keyboard (Space bar on game display)
@@ -326,14 +336,31 @@ function socketHandler(socket) {
     });
 
     // Player ready signal for CPR
-    socket.on('cpr-player-ready', () => {
+    socket.on('cpr-player-ready', (data) => {
         const session = sessions[socket.sessionId];
-        if (!session || !session.gameEngine) return;
+        if (!session) return;
         if (session.game !== 'cpr-trainer') return;
+
+        const difficulty = (data && data.difficulty) || 'beginner';
+
+        // Create engine on-demand if doesn't exist yet
+        if (!session.gameEngine) {
+            session.gameEngine = new CprEngine(socket.sessionId, broadcastToSession, difficulty);
+            console.log(`[Session] CPR engine created on-demand for ${socket.sessionId} (${difficulty})`);
+        }
+
         session.gameEngine.playerReady = true;
         session.gameEngine.playerConnected = true;
-        // Auto-start countdown when player is ready
-        session.gameEngine.startCountdown();
+        session.state = 'playing';
+
+        // Broadcast game-started so controller switches to game screen
+        broadcastToSession(socket.sessionId, 'game-started', { game: session.game, mode: session.mode });
+
+        // Auto-start scenario when player is ready
+        if (session.gameEngine.phase === 'lobby') {
+            session.gameEngine.startScenario();
+        }
+        console.log(`[CPR:${socket.sessionId}] Player ready (${difficulty}) — starting scenario`);
     });
 
     // ═══════════════════════════════════════════════════════════
@@ -396,6 +423,122 @@ function socketHandler(socket) {
     });
 
     // ═══════════════════════════════════════════════════════════
+    //  FOCUS MODE — Socket.IO Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    socket.on('focus-timer-sync', (data) => {
+        broadcastToSession(socket.sessionId, 'focus-timer-sync', {
+            ...data, playerNum: socket.playerNum
+        });
+    });
+
+    socket.on('focus-slouch', (data) => {
+        broadcastToSession(socket.sessionId, 'focus-slouch', {
+            ...data, playerNum: socket.playerNum
+        });
+    });
+
+    socket.on('focus-break-start', (data) => {
+        broadcastToSession(socket.sessionId, 'focus-break-start', {
+            ...data, playerNum: socket.playerNum
+        });
+    });
+
+    socket.on('focus-break-complete', (data) => {
+        broadcastToSession(socket.sessionId, 'focus-break-complete', {
+            ...data, playerNum: socket.playerNum
+        });
+    });
+
+    socket.on('focus-breath-complete', (data) => {
+        broadcastToSession(socket.sessionId, 'focus-breath-complete', {
+            ...data, playerNum: socket.playerNum
+        });
+    });
+
+    socket.on('focus-streak', (data) => {
+        broadcastToSession(socket.sessionId, 'focus-streak', {
+            ...data, playerNum: socket.playerNum
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  PLANK WARS — Socket.IO Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    socket.on('plank-start-challenge', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'plank-wars') return;
+        session.gameEngine.startCountdown();
+    });
+
+    socket.on('plank-data', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || !session.gameEngine) return;
+        if (session.game !== 'plank-wars') return;
+        session.gameEngine.updatePlankData(socket.id, {
+            isPlanking: data.isPlanking,
+            stability: data.stability
+        });
+    });
+
+    socket.on('plank-player-ready', () => {
+        const session = sessions[socket.sessionId];
+        if (!session) return;
+        if (session.game !== 'plank-wars') return;
+        broadcastToSession(socket.sessionId, 'plank-player-ready', {
+            playerNum: socket.playerNum
+        });
+    });
+
+
+
+    // ═══════════════════════════════════════════════════════════
+    //  GRAVITY BRIDGE — Socket.IO Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    socket.on('gb-movement', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || session.state !== 'playing') return;
+        if (session.game !== 'gravity-bridge') return;
+        broadcastToSession(socket.sessionId, 'gb-movement', {
+            playerNum: socket.playerNum,
+            height: data.height,
+            tilt: data.tilt
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  RHYTHM PULSE — Socket.IO Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    socket.on('rp-squat', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || session.state !== 'playing') return;
+        if (session.game !== 'rhythm-pulse') return;
+        broadcastToSession(socket.sessionId, 'rp-squat', {
+            playerNum: socket.playerNum,
+            timestamp: data.timestamp || Date.now()
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  BALANCE DUEL — Socket.IO Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    socket.on('bd-tilt', (data) => {
+        const session = sessions[socket.sessionId];
+        if (!session || session.state !== 'playing') return;
+        if (session.game !== 'balance-duel') return;
+        broadcastToSession(socket.sessionId, 'bd-tilt', {
+            playerNum: socket.playerNum,
+            beta: data.beta,
+            gamma: data.gamma
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════════
     //  GENERIC — Start Game (creates game engine)
     // ═══════════════════════════════════════════════════════════
 
@@ -413,10 +556,25 @@ function socketHandler(socket) {
             console.log(`[Session] CPR Trainer engine created for ${socket.sessionId}`);
         }
 
+        // If player already sent cpr-player-ready before engine existed, auto-start
+        if (session.game === 'cpr-trainer' && session.gameEngine && session.gameEngine.playerReady && session.gameEngine.phase === 'lobby') {
+            session.gameEngine.startScenario();
+            console.log(`[CPR:${socket.sessionId}] Player was already ready — auto-starting scenario`);
+        }
+
         if (session.game === 'tower-siege' && !session.gameEngine) {
             const tsMode = session.mode === '1p' ? 'ai' : 'pvp';
             session.gameEngine = new TowerSiegeEngine(socket.sessionId, tsMode, broadcastToSession);
             console.log(`[Session] Tower Siege engine created for ${socket.sessionId} (${tsMode})`);
+        }
+
+        if (session.game === 'plank-wars' && !session.gameEngine) {
+            session.gameEngine = new PlankEngine(socket.sessionId, broadcastToSession);
+            // Add all existing players
+            for (const p of session.players) {
+                session.gameEngine.addPlayer(p.id, p.playerNum);
+            }
+            console.log(`[Session] Plank Wars engine created for ${socket.sessionId}`);
         }
     });
 

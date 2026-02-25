@@ -438,7 +438,12 @@
             'dino-dash': { title: 'KNIGHT DASH', desc: 'Jump in real life to play!' },
             'ghost-breath': { title: 'GHOST OF THE BREATH TEMPLE', desc: 'Breathe to keep the flame alive!' },
             'cpr-trainer': { title: 'CPR TRAINER', desc: 'Practice life-saving CPR compressions!' },
-            'tower-siege': { title: 'TOWER SIEGE', desc: 'Push-up powered tower warfare!' }
+            'tower-siege': { title: 'TOWER SIEGE', desc: 'Push-up powered tower warfare!' },
+            'focus-mode': { title: 'FOCUS MODE', desc: '25-min Pomodoro with posture tracking' },
+            'plank-wars': { title: 'PLANK WARS', desc: '60-second plank challenge!' },
+            'gravity-bridge': { title: 'GRAVITY BRIDGE', desc: 'Sync your bodies to cross the bridge!' },
+            'rhythm-pulse': { title: 'RHYTHM PULSE', desc: 'Move with the beat, open the path!' },
+            'balance-duel': { title: 'BALANCE DUEL', desc: 'Keep the crystal stable together!' }
         };
 
         // Get game from URL
@@ -463,7 +468,12 @@
                 'dino-dash': { solo: 'Jump to dodge obstacles!', vs: 'Jump to dodge obstacles!' },
                 'ghost-breath': { solo: 'Match breathing rhythms to keep the flame alive!', vs: 'Match breathing rhythms to keep the flame alive!' },
                 'cpr-trainer': { solo: 'Practice CPR with real-time feedback!', vs: 'Practice CPR with real-time feedback!' },
-                'tower-siege': { solo: 'Battle AI General Crimson!', vs: '1v1 Push-up battle!' }
+                'tower-siege': { solo: 'Battle AI General Crimson!', vs: '1v1 Push-up battle!' },
+                'focus-mode': { solo: '25-min Pomodoro with posture + breath', vs: 'Group focus session!' },
+                'plank-wars': { solo: 'Solo plank challenge!', vs: 'LAN plank competition!' },
+                'gravity-bridge': { solo: 'Solo bridge crossing!', vs: 'Co-op bridge crossing!' },
+                'rhythm-pulse': { solo: 'Solo rhythm mode!', vs: 'Co-op rhythm paths!' },
+                'balance-duel': { solo: 'Solo balance!', vs: 'Co-op crystal balance!' }
             };
             const descs = descMap[game] || { solo: 'Solo mode', vs: 'Versus mode' };
 
@@ -594,13 +604,18 @@
                 'dino-dash': `dino-dash/game.html?session=${sessionId}&mode=${selectedMode}`,
                 'ghost-breath': `ghost-breath/game.html?session=${sessionId}&mode=${selectedMode}`,
                 'cpr-trainer': `cpr-trainer/game.html?session=${sessionId}&mode=${selectedMode}`,
-                'tower-siege': `tower-siege/game.html?session=${sessionId}&mode=${selectedMode}`
+                'tower-siege': `tower-siege/game.html?session=${sessionId}&mode=${selectedMode}`,
+                'focus-mode': `focus-mode/game.html?session=${sessionId}&mode=${selectedMode}`,
+                'plank-wars': `plank-wars/game.html?session=${sessionId}&mode=${selectedMode}`,
+                'gravity-bridge': `gravity-bridge/game.html?session=${sessionId}&mode=${selectedMode}`,
+                'rhythm-pulse': `rhythm-pulse/game.html?session=${sessionId}&mode=${selectedMode}`,
+                'balance-duel': `balance-duel/game.html?session=${sessionId}&mode=${selectedMode}`
             };
             window.location.href = gamePages[game] || `tetris.html?session=${sessionId}&mode=${selectedMode}`;
         }
 
         // Auto-select solo mode for single-player-only games
-        const soloOnlyGames = ['dino-dash', 'ghost-breath', 'cpr-trainer'];
+        const soloOnlyGames = ['dino-dash', 'ghost-breath', 'cpr-trainer', 'focus-mode'];
         if (soloOnlyGames.includes(game)) {
             // Hide mode selection, auto-select 1p
             document.getElementById('mode-select').style.display = 'none';

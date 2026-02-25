@@ -1,0 +1,96 @@
+/* Rhythm Pulse — Game Display */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+    background: #0a0614;
+}
+
+.game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.waiting-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a0614;
+    z-index: 100;
+    transition: opacity 0.5s ease;
+}
+
+.waiting-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.waiting-overlay .game-emoji {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.waiting-overlay h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2rem;
+    color: #ff00e5;
+    text-shadow: 0 0 30px rgba(255, 0, 229, 0.4);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.waiting-overlay .subtitle {
+    color: #8888aa;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+}
+
+.waiting-overlay .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.08);
+    border-top-color: #ff00e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.waiting-overlay .waiting-info {
+    margin-top: 16px;
+    color: #555570;
+    font-size: 0.85rem;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

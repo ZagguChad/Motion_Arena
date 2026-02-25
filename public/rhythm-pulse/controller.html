@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Rhythm Pulse Controller | Motion Arena</title>
+    <link rel="stylesheet" href="controller.css">
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div class="screen active" id="loadingScreen">
+        <div class="app-logo">🎵</div>
+        <div class="app-title">RHYTHM PULSE</div>
+        <div class="app-subtitle">Co-op Beat Sync</div>
+        <p class="loader-text" id="loaderText">Connecting...</p>
+        <p class="loader-sub" id="loaderSub">Initializing sensors</p>
+        <div class="loader-bar">
+            <div class="loader-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- Waiting Screen -->
+    <div class="screen" id="waitingScreen">
+        <div class="waiting-icon">⏳</div>
+        <div class="waiting-title">WAITING FOR HOST</div>
+        <p class="waiting-sub">Keep this screen open.<br>The game will start when the host presses START.</p>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="screen" id="gameScreen">
+        <div class="game-header">
+            <span class="game-label">RHYTHM PULSE</span>
+            <span class="player-badge p1" id="playerBadge">P1</span>
+        </div>
+
+        <div class="beat-section">
+            <div class="beat-circle" id="beatCircle">
+                <div class="beat-ring"></div>
+                <div class="beat-icon">🎵</div>
+            </div>
+        </div>
+
+        <div class="combo-section">
+            <div class="combo-label">COMBO</div>
+            <div class="combo-value" id="comboValue">0</div>
+        </div>
+
+        <div class="feedback-text wait" id="feedbackText">Wait for the beat...</div>
+
+        <div class="instruction-text">
+            🧎 Squat on the BEAT to open paths!
+        </div>
+
+        <div class="status-bar">
+            <div class="connection-status">
+                <div class="conn-dot" id="connDot"></div>
+                <span id="connText">Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="controller.js"></script>
+</body>
+
+</html>

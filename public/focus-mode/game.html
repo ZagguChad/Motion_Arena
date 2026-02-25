@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Mode — Motion Arena</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="css/focus.css">
+    <style>
+        body {
+            background: var(--focus-bg);
+        }
+
+        .big-timer {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 4rem;
+            color: #fff;
+            text-shadow: 0 0 40px rgba(108, 92, 231, 0.5);
+            text-align: center;
+            margin: 40px 0;
+            letter-spacing: 6px;
+        }
+
+        .session-status {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            text-align: center;
+            color: var(--focus-secondary);
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+        }
+
+        .session-status.active {
+            color: var(--focus-accent);
+        }
+
+        .session-status.paused {
+            color: var(--focus-warn);
+        }
+
+        .aggregate-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto 40px;
+        }
+
+        .agg-stat {
+            background: var(--focus-card);
+            border: 1px solid var(--focus-border);
+            border-radius: 16px;
+            padding: 24px 16px;
+            text-align: center;
+        }
+
+        .agg-stat-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .agg-stat-value {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 1.4rem;
+            color: var(--focus-secondary);
+            text-shadow: 0 0 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .agg-stat-label {
+            font-size: 0.7rem;
+            color: rgba(162, 155, 254, 0.5);
+            margin-top: 6px;
+        }
+
+        .posture-timeline {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--focus-card);
+            border: 1px solid var(--focus-border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .timeline-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.5rem;
+            color: var(--focus-secondary);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .timeline-events {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .timeline-event {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(108, 92, 231, 0.1);
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .timeline-event:last-child {
+            border: none;
+        }
+
+        .event-time {
+            font-family: monospace;
+            color: var(--focus-secondary);
+            font-size: 0.75rem;
+            min-width: 60px;
+        }
+
+        .event-icon {
+            font-size: 1.2rem;
+        }
+
+        .no-students {
+            text-align: center;
+            color: rgba(162, 155, 254, 0.4);
+            font-size: 0.85rem;
+            padding: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="focus-game-container">
+        <div class="focus-game-header">
+            <h1>🎓 FOCUS MODE</h1>
+            <p class="subtitle">Student Focus & Wellness Monitor</p>
+        </div>
+
+        <div class="session-status" id="session-status">WAITING FOR STUDENTS</div>
+        <div class="big-timer" id="big-timer">25:00</div>
+
+        <div class="aggregate-stats">
+            <div class="agg-stat">
+                <div class="agg-stat-icon">👥</div>
+                <div class="agg-stat-value" id="student-count">0</div>
+                <div class="agg-stat-label">Students</div>
+            </div>
+            <div class="agg-stat">
+                <div class="agg-stat-icon">🔥</div>
+                <div class="agg-stat-value" id="focus-streaks">0</div>
+                <div class="agg-stat-label">Focus Streaks</div>
+            </div>
+            <div class="agg-stat">
+                <div class="agg-stat-icon">🧘</div>
+                <div class="agg-stat-value" id="breaks-taken">0</div>
+                <div class="agg-stat-label">Breaks Taken</div>
+            </div>
+            <div class="agg-stat">
+                <div class="agg-stat-icon">🫁</div>
+                <div class="agg-stat-value" id="breath-resets">0</div>
+                <div class="agg-stat-label">Anxiety Resets</div>
+            </div>
+        </div>
+
+        <div class="focus-dashboard">
+            <div class="focus-panel">
+                <div class="focus-panel-title">CONNECTED STUDENTS</div>
+                <div class="connected-students" id="connected-students">
+                    <div class="no-students">No students connected yet.<br>Scan QR to join.</div>
+                </div>
+            </div>
+            <div class="focus-panel">
+                <div class="focus-panel-title">ACTIVITY TIMELINE</div>
+                <div class="timeline-events" id="timeline-events">
+                    <div class="timeline-event">
+                        <span class="event-time">--:--</span>
+                        <span class="event-icon">📡</span>
+                        <span>Session created. Waiting for students...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({ transports: ['polling', 'websocket'] });
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+
+        let timerSeconds = 25 * 60;
+        let timerRunning = false;
+        let timerInterval = null;
+        let students = {};
+        let totalStreaks = 0;
+        let totalBreaks = 0;
+        let totalBreathResets = 0;
+
+        // Rejoin as laptop
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (res) => {
+                if (res && !res.error) {
+                    console.log('[Focus Game] Rejoined session:', sessionId);
+                    document.getElementById('session-status').textContent = 'SESSION ACTIVE';
+                    document.getElementById('session-status').classList.add('active');
+                }
+            });
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function updateTimer() {
+            document.getElementById('big-timer').textContent = formatTime(timerSeconds);
+        }
+
+        function addTimelineEvent(icon, text) {
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const container = document.getElementById('timeline-events');
+            const el = document.createElement('div');
+            el.className = 'timeline-event';
+            el.innerHTML = `
+                <span class="event-time">${timeStr}</span>
+                <span class="event-icon">${icon}</span>
+                <span>${text}</span>
+            `;
+            container.insertBefore(el, container.firstChild);
+        }
+
+        function updateStudentList() {
+            const container = document.getElementById('connected-students');
+            const entries = Object.values(students);
+            if (entries.length === 0) {
+                container.innerHTML = '<div class="no-students">No students connected yet.<br>Scan QR to join.</div>';
+                return;
+            }
+            container.innerHTML = entries.map(s => `
+                <div class="student-chip">
+                    <span class="status-indicator ${s.status}"></span>
+                    Student ${s.playerNum} — ${s.status === 'focusing' ? '🧠 Focusing' : s.status === 'break' ? '☕ Break' : '⏸ Idle'}
+                </div>
+            `).join('');
+            document.getElementById('student-count').textContent = entries.length;
+        }
+
+        // Socket events
+        socket.on('focus-student-joined', (data) => {
+            students[data.playerId] = { playerNum: data.playerNum, status: 'focusing' };
+            updateStudentList();
+            addTimelineEvent('👋', `Student ${data.playerNum} joined`);
+            // Auto-start timer on first student
+            if (!timerRunning && Object.keys(students).length === 1) {
+                timerRunning = true;
+                timerInterval = setInterval(() => {
+                    timerSeconds--;
+                    updateTimer();
+                    if (timerSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        timerRunning = false;
+                        document.getElementById('session-status').textContent = 'SESSION COMPLETE';
+                        broadcastTimerEnd();
+                    }
+                }, 1000);
+                document.getElementById('session-status').textContent = 'FOCUS IN PROGRESS';
+                document.getElementById('session-status').classList.add('active');
+            }
+        });
+
+        socket.on('focus-slouch-detected', (data) => {
+            const s = students[data.playerId];
+            if (s) {
+                s.status = 'break';
+                updateStudentList();
+                addTimelineEvent('⚠️', `Student ${s.playerNum} slouching — break triggered`);
+                totalBreaks++;
+                document.getElementById('breaks-taken').textContent = totalBreaks;
+            }
+        });
+
+        socket.on('focus-break-ended', (data) => {
+            const s = students[data.playerId];
+            if (s) {
+                s.status = 'focusing';
+                updateStudentList();
+                addTimelineEvent('✅', `Student ${s.playerNum} resumed focusing`);
+            }
+        });
+
+        socket.on('focus-breath-reset', (data) => {
+            const s = students[data.playerId];
+            if (s) {
+                addTimelineEvent('🫁', `Student ${s.playerNum} completed anxiety reset`);
+                totalBreathResets++;
+                document.getElementById('breath-resets').textContent = totalBreathResets;
+            }
+        });
+
+        socket.on('focus-streak', (data) => {
+            totalStreaks++;
+            document.getElementById('focus-streaks').textContent = totalStreaks;
+            addTimelineEvent('🔥', `Student ${data.playerNum} hit ${data.streak}-min focus streak!`);
+        });
+
+        socket.on('focus-timer-sync', (data) => {
+            timerSeconds = data.remaining;
+            updateTimer();
+        });
+
+        socket.on('player-left', (data) => {
+            for (const [id, s] of Object.entries(students)) {
+                if (s.playerNum === data.playerNum) {
+                    delete students[id];
+                    addTimelineEvent('👋', `Student ${data.playerNum} disconnected`);
+                    break;
+                }
+            }
+            updateStudentList();
+        });
+
+        function broadcastTimerEnd() {
+            socket.emit('focus-timer-complete', { sessionId });
+        }
+
+        updateTimer();
+    </script>
+</body>
+
+</html>
