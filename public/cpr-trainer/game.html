@@ -15,13 +15,7 @@
 </head>
 
 <body>
-    <!-- Waiting Overlay -->
-    <div class="waiting-overlay" id="waiting-overlay">
-        <h1>❤️ CPR TRAINER</h1>
-        <p class="subtitle" id="waiting-status">Waiting for connection...</p>
-        <div class="loading-spinner"></div>
-        <p class="waiting-info">Place phone face-down on a pillow to play</p>
-    </div>
+    <!-- Canvas handles all visual states now -->
 
     <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
@@ -29,7 +23,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
     <script>
-        // ─── SOCKET.IO CONNECTION ───
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session');
         const mode = params.get('mode') || '1p';
@@ -38,42 +31,69 @@
             transports: ['websocket', 'polling']
         });
 
-        const waitingStatus = document.getElementById('waiting-status');
         let gameStarted = false;
 
         // ─── REJOIN SESSION (laptop navigated from lobby → game page) ───
         if (sessionId) {
             socket.emit('rejoin-laptop', { sessionId }, (response) => {
                 if (response.error) {
-                    waitingStatus.innerHTML = `<span style="color: #ff4466;">❌ ${response.error}</span>`;
+                    console.error('[CPR Trainer] Rejoin error:', response.error);
+                    // Update canvas state to show error
+                    if (typeof updateGameState === 'function') {
+                        updateGameState({ phase: 'lobby', error: response.error });
+                    }
                     return;
                 }
 
                 console.log('[CPR Trainer] Rejoined session:', response);
 
+                // Always emit start-game so engine is created and ready for mobile player
+                if (!gameStarted) {
+                    gameStarted = true;
+                    socket.emit('start-game');
+                    console.log('[CPR Trainer] Emitted start-game to create engine');
+                }
+
+                // If already playing (reconnection), update state immediately
                 if (response.state === 'playing') {
-                    startGameUI();
-                } else if (response.players && response.players.length >= 1) {
-                    waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected! Starting...</span>';
-                    setTimeout(() => startGameUI(), 1000);
+                    console.log('[CPR Trainer] Game already in progress');
                 }
             });
         } else {
             // No session — solo/dev mode with keyboard only
-            waitingStatus.innerHTML = '<span style="color: #e74c6f;">No session — Keyboard mode (SPACE = compress)</span>';
-            setTimeout(() => startGameUI(), 1500);
+            // Create a local state for keyboard-only play
+            console.log('[CPR Trainer] No session — keyboard-only mode');
+            if (typeof updateGameState === 'function') {
+                updateGameState({
+                    phase: 'playing',
+                    timer: 60,
+                    countdownTimer: 0,
+                    player: { connected: false, ready: false },
+                    compressions: { total: 0, currentBPM: 0, currentDepth: 0, currentRecoil: 0 },
+                    scoring: { score: 0, grade: '-', rateScore: 0, depthScore: 0, recoilScore: 0, consistencyScore: 0, combo: 0, maxCombo: 0, perfectCount: 0, goodCount: 0, badCount: 0 },
+                    feedback: 'Press SPACE to compress',
+                    feedbackType: 'neutral',
+                    events: [],
+                    avgBPM: 0, avgDepth: 0, avgRecoil: 0,
+                    tips: [],
+                    waveform: []
+                });
+            }
         }
 
         // Listen for player joining
         socket.on('player-joined', (data) => {
             console.log('[CPR Trainer] Player joined:', data);
-            waitingStatus.innerHTML = '<span style="color: #44ff88;">✅ Player connected!</span>';
         });
 
         // Listen for game start signal from server
         socket.on('game-started', () => {
             console.log('[CPR Trainer] Game started signal received');
-            startGameUI();
+        });
+
+        // CPR engine start signal — game is now counting down / playing
+        socket.on('cpr-game-start', (data) => {
+            console.log('[CPR Trainer] CPR game start signal — timer:', data.timer);
         });
 
         // Receive CPR game state from server engine
@@ -89,18 +109,6 @@
             alert(data.reason || 'Session ended');
             window.location.href = '/';
         });
-
-        // ─── START GAME (guarded — only runs once) ───
-        function startGameUI() {
-            if (gameStarted) return;
-            gameStarted = true;
-
-            // Tell server the game is now 'playing'
-            socket.emit('start-game');
-
-            // Hide waiting screen
-            document.getElementById('waiting-overlay').classList.add('hidden');
-        }
 
         // ─── KEYBOARD: Spacebar → simulate compression ───
         document.addEventListener('keydown', (e) => {

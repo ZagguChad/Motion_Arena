@@ -3,91 +3,120 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>CPR Trainer — Phone Controller</title>
-    <meta name="description" content="CPR Training phone controller — uses accelerometer to detect chest compressions">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CPR Controller | Motion Arena</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="controller.css">
 </head>
 
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="screen active">
-        <div class="loader-container">
-            <div class="heart-loader">❤️</div>
-            <h1 class="loader-text">CPR Trainer</h1>
-            <p class="loader-sub">Initializing sensors...</p>
+    <!-- ── Loading Screen ──────────────────────────────────── -->
+    <div class="screen active" id="loadingScreen">
+        <div class="screen-content">
+            <div class="app-logo">❤️</div>
+            <h1 class="app-title">CPR TRAINER</h1>
+            <p class="loader-text">Connecting...</p>
+            <p class="loader-sub">Initializing sensors</p>
+            <div class="loader-bar">
+                <div class="loader-bar-fill"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Setup Screen -->
-    <div id="setupScreen" class="screen">
-        <div class="setup-container">
-            <div class="setup-icon">📱</div>
-            <h2>Place Phone Face-Down</h2>
-            <p>Put your phone on a <strong>pillow or cushion</strong>, screen facing down.</p>
+    <!-- ── Calibration Screen ──────────────────────────────── -->
+    <div class="screen" id="calibScreen">
+        <div class="screen-content">
+            <div class="calib-icon">🎯</div>
+            <h1 class="calib-title">Calibration</h1>
+            <p class="calib-desc">Place phone face-down on a pillow or cushion.<br>Perform <b>3 strong compressions</b>
+                to calibrate.</p>
 
-            <div class="setup-steps">
-                <div class="step">
-                    <span class="step-num">1</span>
-                    <span>Place phone on soft surface</span>
+            <div class="calib-progress-wrap">
+                <div class="calib-progress-bar">
+                    <div class="calib-progress-fill" id="calibProgress"></div>
                 </div>
-                <div class="step">
-                    <span class="step-num">2</span>
-                    <span>Put hands over the phone</span>
-                </div>
-                <div class="step">
-                    <span class="step-num">3</span>
-                    <span>Push hard & fast: 100-120 BPM</span>
-                </div>
+                <p class="calib-count" id="calibCount">0/3</p>
             </div>
 
-            <button id="readyBtn" class="btn-ready">
-                ✅ I'M READY — START!
-            </button>
+            <p class="calib-status" id="calibStatus">Push down firmly 3 times...</p>
         </div>
     </div>
 
-    <!-- Game Screen -->
-    <div id="gameScreen" class="screen">
-        <div class="game-header">
-            <div id="timerDisplay" class="timer">⏱ 1:00</div>
-            <div id="compressionCount" class="compression-count">0</div>
-        </div>
+    <!-- ── Setup Screen (Difficulty + Ready) ───────────────── -->
+    <div class="screen" id="setupScreen">
+        <div class="screen-content">
+            <h1 class="setup-title">🏥 Ready to Train?</h1>
+            <p class="setup-sub">Calibration complete! Select difficulty:</p>
 
-        <div id="feedbackZone" class="feedback-zone">
-            <div id="feedbackText" class="feedback-text">Push down!</div>
-        </div>
-
-        <div id="bpmDisplay" class="bpm-display">
-            <span id="bpmValue" class="bpm-value">--</span>
-            <span class="bpm-label">BPM</span>
-        </div>
-
-        <div id="depthDisplay" class="depth-display">
-            <div id="depthBar" class="depth-bar">
-                <div id="depthFill" class="depth-fill"></div>
-                <div class="depth-zone"></div>
+            <div class="diff-group">
+                <button class="diff-btn selected" data-diff="beginner">
+                    <span class="diff-icon">🟢</span>
+                    <span class="diff-label">Beginner</span>
+                    <span class="diff-desc">Guided rhythm • Depth guide • Forgiving</span>
+                </button>
+                <button class="diff-btn" data-diff="intermediate">
+                    <span class="diff-icon">🟡</span>
+                    <span class="diff-label">Intermediate</span>
+                    <span class="diff-desc">No rhythm hint • Realistic physics</span>
+                </button>
+                <button class="diff-btn" data-diff="advanced">
+                    <span class="diff-icon">🔴</span>
+                    <span class="diff-label">Advanced</span>
+                    <span class="diff-desc">Fatigue sim • Strict scoring</span>
+                </button>
             </div>
-            <span id="depthValue" class="depth-value">-- cm</span>
-        </div>
 
-        <div id="metronomeToggle" class="metronome-toggle">
-            <button id="metronomeBtn" class="btn-metronome">🎵 Metronome: OFF</button>
+            <button class="ready-btn" id="readyBtn">🚀 I'M READY — START!</button>
         </div>
     </div>
 
-    <!-- Game Over Screen -->
-    <div id="overScreen" class="screen">
-        <div class="over-container">
-            <div id="overGrade" class="over-grade">-</div>
-            <div id="overScore" class="over-score">Score: 0/100</div>
-            <div id="overStats" class="over-stats"></div>
-            <div id="overTips" class="over-tips"></div>
-            <button onclick="location.reload()" class="btn-retry">🔄 Try Again</button>
+    <!-- ── Game Screen ─────────────────────────────────────── -->
+    <div class="screen" id="gameScreen">
+        <div class="game-hud">
+            <div class="hud-timer" id="timerDisplay">⏱ 2:00</div>
+            <div class="hud-count"><span id="compressionCount">0</span> <small>pushes</small></div>
+        </div>
+
+        <div class="feedback-text" id="feedbackText">Push down!</div>
+
+        <div class="rhythm-guide" id="rhythmGuide"></div>
+
+        <div class="game-stats">
+            <div class="stat-card">
+                <div class="stat-label">BPM</div>
+                <div class="stat-value" id="bpmValue">--</div>
+                <div class="stat-target">Target: 100-120</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">DEPTH</div>
+                <div class="depth-bar">
+                    <div class="depth-fill" id="depthFill"></div>
+                </div>
+                <div class="stat-value-sm" id="depthValue">-- cm</div>
+                <div class="stat-target">Target: 5-6 cm</div>
+            </div>
+        </div>
+
+        <div class="tilt-indicator" id="tiltIndicator">✅ Hand angle OK</div>
+
+        <button class="metronome-toggle" id="metronomeBtn">🎵 Metronome: OFF</button>
+    </div>
+
+    <!-- ── Game Over Screen ────────────────────────────────── -->
+    <div class="screen" id="overScreen">
+        <div class="screen-content">
+            <h1 class="over-title">🏁 CPR Complete!</h1>
+            <div class="over-grade" id="overGrade">-</div>
+            <div class="over-score" id="overScore">Score: 0/100</div>
+            <div class="over-survival" id="overSurvival">Survival Probability: --%</div>
+
+            <div class="over-stats" id="overStats"></div>
+
+            <div class="over-tips" id="overTips"></div>
+
+            <button class="retry-btn" onclick="location.reload()">🔄 Try Again</button>
         </div>
     </div>
 
