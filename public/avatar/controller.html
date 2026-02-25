@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Avatar Controller — Motion Arena</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        body {
+            background: #0a0a14;
+        }
+
+        .avatar-controller {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .avatar-header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            color: #00e5ff;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .avatar-header .badge {
+            display: inline-block;
+            padding: 4px 14px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.4rem;
+            color: rgba(0, 229, 255, 0.6);
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        /* Action Display */
+        .action-ring {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 3px solid rgba(0, 229, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 16px 0;
+            transition: all 0.3s;
+            background: rgba(0, 229, 255, 0.02);
+        }
+
+        .action-ring.active {
+            border-color: #00e5ff;
+            background: rgba(0, 229, 255, 0.08);
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        .action-icon {
+            font-size: 3.5rem;
+            margin-bottom: 6px;
+        }
+
+        .action-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.55rem;
+            color: rgba(0, 229, 255, 0.7);
+            letter-spacing: 2px;
+        }
+
+        /* Sensor Meters */
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+            margin: 16px 0;
+        }
+
+        .sensor-meter {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .sensor-label {
+            font-size: 0.6rem;
+            color: rgba(200, 200, 220, 0.4);
+            margin-bottom: 4px;
+        }
+
+        .sensor-value {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: rgba(0, 229, 255, 0.7);
+        }
+
+        /* Controls Hint */
+        .controls-hint {
+            font-size: 0.7rem;
+            color: rgba(200, 200, 220, 0.3);
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+
+        .controls-hint strong {
+            color: rgba(0, 229, 255, 0.5);
+        }
+
+        /* Connection Screen */
+        .connecting-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .connecting-screen h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            color: #00e5ff;
+            margin-bottom: 16px;
+        }
+
+        .connecting-screen p {
+            color: rgba(0, 229, 255, 0.5);
+            font-size: 0.85rem;
+        }
+
+        .connecting-screen .error {
+            color: #e17055;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(10, 10, 20, 0.9);
+            border-top: 1px solid rgba(0, 229, 255, 0.1);
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Connecting Screen -->
+    <div class="connecting-screen" id="connecting-screen">
+        <h2>CONNECTING...</h2>
+        <p id="connect-message">Joining avatar session...</p>
+    </div>
+
+    <!-- Main Controller -->
+    <div class="avatar-controller" id="avatar-controller" style="display:none;">
+        <div class="avatar-header">
+            <h1>🌍 VIRTUAL WORLD</h1>
+            <div class="badge">BODY = CONTROLLER</div>
+        </div>
+
+        <!-- Action Ring -->
+        <div class="action-ring" id="action-ring">
+            <div class="action-icon" id="action-icon">🧍</div>
+            <div class="action-label" id="action-label">IDLE</div>
+        </div>
+
+        <!-- Sensor Meters -->
+        <div class="sensor-grid">
+            <div class="sensor-meter">
+                <div class="sensor-label">📱 Accel Y</div>
+                <div class="sensor-value" id="sensor-accel">0.0</div>
+            </div>
+            <div class="sensor-meter">
+                <div class="sensor-label">🔄 Gyro</div>
+                <div class="sensor-value" id="sensor-gyro">0.0</div>
+            </div>
+            <div class="sensor-meter">
+                <div class="sensor-label">🚶 Steps</div>
+                <div class="sensor-value" id="sensor-steps">0</div>
+            </div>
+            <div class="sensor-meter">
+                <div class="sensor-label">🎤 Mic</div>
+                <div class="sensor-value" id="sensor-mic">--</div>
+            </div>
+        </div>
+
+        <!-- Controls Guide -->
+        <div class="controls-hint">
+            <strong>Squat</strong> → Attack monster<br>
+            <strong>Jump</strong> → Character flies<br>
+            <strong>Plank</strong> → Hold shield<br>
+            <strong>Run in place</strong> → Explore world
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div style="display:flex; align-items:center; gap:8px; color:rgba(0,229,255,0.6);">
+                <span class="status-dot connected"></span>
+                <span>Connected</span>
+            </div>
+            <span style="color:rgba(0,229,255,0.3);" id="action-status">Ready</span>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({ transports: ['polling', 'websocket'], reconnectionAttempts: 5, timeout: 10000 });
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+
+        let currentAction = 'idle';
+        let stepCount = 0;
+        let lastAccelY = 0;
+        let inSquat = false;
+        let squatCooldown = false;
+        let jumpCooldown = false;
+
+        // Thresholds
+        const SQUAT_THRESHOLD = 3;    // Y-axis dip
+        const JUMP_THRESHOLD = 15;    // Y-axis spike
+        const RUN_THRESHOLD = 12;     // Sustained shaking
+        const PLANK_THRESHOLD = 2;    // Phone flat
+
+        // ─── Sensor Detection ───
+        function initSensors() {
+            // Accelerometer
+            if (window.DeviceMotionEvent) {
+                if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                    DeviceMotionEvent.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            window.addEventListener('devicemotion', handleMotion);
+                        }
+                    }).catch(console.error);
+                } else {
+                    window.addEventListener('devicemotion', handleMotion);
+                }
+            }
+
+            // Step counter (if available)
+            if ('Accelerometer' in window) {
+                try {
+                    const accelSensor = new Accelerometer({ frequency: 10 });
+                    accelSensor.start();
+                } catch (e) { /* fallback to devicemotion */ }
+            }
+        }
+
+        let accelBuffer = [];
+        const BUFFER_SIZE = 10;
+
+        function handleMotion(e) {
+            const ag = e.accelerationIncludingGravity;
+            const a = e.acceleration;
+            if (!ag) return;
+
+            const accelY = ag.y || 0;
+            const accelX = ag.x || 0;
+            const accelZ = ag.z || 0;
+            const rawAccel = a ? Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z) : 0;
+
+            // Buffer for smoothing
+            accelBuffer.push({ y: accelY, total: rawAccel, flat: Math.sqrt(accelX * accelX + accelY * accelY) });
+            if (accelBuffer.length > BUFFER_SIZE) accelBuffer.shift();
+
+            const avgTotal = accelBuffer.reduce((s, v) => s + v.total, 0) / accelBuffer.length;
+            const avgFlat = accelBuffer.reduce((s, v) => s + v.flat, 0) / accelBuffer.length;
+
+            // Update sensor display
+            document.getElementById('sensor-accel').textContent = accelY.toFixed(1);
+            if (e.rotationRate) {
+                document.getElementById('sensor-gyro').textContent =
+                    (Math.abs(e.rotationRate.alpha || 0) + Math.abs(e.rotationRate.beta || 0)).toFixed(0) + '°/s';
+            }
+
+            // ─── Detect Actions ───
+            let detectedAction = 'idle';
+
+            // PLANK: phone flat (y ≈ 0, z ≈ ±9.8)
+            if (avgFlat < PLANK_THRESHOLD && accelBuffer.length >= 5) {
+                detectedAction = 'plank';
+            }
+            // JUMP: sudden Y-axis spike
+            else if (rawAccel > JUMP_THRESHOLD && !jumpCooldown) {
+                detectedAction = 'jump';
+                jumpCooldown = true;
+                setTimeout(() => { jumpCooldown = false; }, 800);
+            }
+            // SQUAT: Y-axis dip (phone goes down)
+            else if (accelY < -SQUAT_THRESHOLD && !squatCooldown) {
+                detectedAction = 'squat';
+                squatCooldown = true;
+                setTimeout(() => { squatCooldown = false; }, 600);
+            }
+            // RUN: sustained shaking
+            else if (avgTotal > RUN_THRESHOLD) {
+                detectedAction = 'run';
+                stepCount++;
+                document.getElementById('sensor-steps').textContent = stepCount;
+            }
+
+            setAction(detectedAction);
+        }
+
+        function setAction(action) {
+            if (action === currentAction) return;
+            currentAction = action;
+
+            const actions = {
+                idle: { icon: '🧍', label: 'IDLE' },
+                squat: { icon: '⚔️', label: 'ATTACK!' },
+                jump: { icon: '🦅', label: 'FLY!' },
+                plank: { icon: '🛡️', label: 'SHIELD!' },
+                run: { icon: '🏃', label: 'RUN!' },
+                climb: { icon: '🧗', label: 'CLIMB!' }
+            };
+
+            const a = actions[action] || actions.idle;
+            document.getElementById('action-icon').textContent = a.icon;
+            document.getElementById('action-label').textContent = a.label;
+            document.getElementById('action-status').textContent = a.label;
+
+            const ring = document.getElementById('action-ring');
+            if (action !== 'idle') {
+                ring.classList.add('active');
+            } else {
+                ring.classList.remove('active');
+            }
+
+            // Send to server
+            socket.emit('avatar-action', { sessionId, action });
+        }
+
+        // ─── Session Joining ───
+        if (sessionId) {
+            socket.on('connect', () => {
+                socket.emit('join-session', { sessionId }, (response) => {
+                    if (response && response.error) {
+                        document.getElementById('connect-message').textContent = response.error;
+                        document.getElementById('connect-message').classList.add('error');
+                        return;
+                    }
+                    document.getElementById('connecting-screen').style.display = 'none';
+                    document.getElementById('avatar-controller').style.display = 'flex';
+                    initSensors();
+                });
+            });
+        } else {
+            document.getElementById('connect-message').textContent = 'No session ID. Scan QR code to join.';
+        }
+
+        socket.on('game-started', () => {
+            document.getElementById('action-status').textContent = 'GAME ON!';
+        });
+    </script>
+</body>
+
+</html>

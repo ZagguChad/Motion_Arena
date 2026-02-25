@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Focus Mode — Controller</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="css/focus.css">
+    <style>
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        body {
+            background: var(--focus-bg);
+        }
+
+        .focus-controller {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .focus-header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            color: var(--focus-primary);
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .focus-header .badge {
+            display: inline-block;
+            padding: 4px 14px;
+            background: rgba(108, 92, 231, 0.1);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            border-radius: 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.4rem;
+            color: var(--focus-secondary);
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .breath-btn {
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: rgba(108, 92, 231, 0.15);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            border-radius: 25px;
+            color: var(--focus-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .breath-btn:hover {
+            background: rgba(108, 92, 231, 0.25);
+        }
+
+        .posture-status {
+            margin-top: 16px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .posture-good {
+            color: var(--focus-accent);
+        }
+
+        .posture-bad {
+            color: var(--focus-danger);
+        }
+
+        .connecting-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--focus-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .connecting-screen h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            color: var(--focus-secondary);
+            margin-bottom: 16px;
+        }
+
+        .connecting-screen p {
+            color: rgba(162, 155, 254, 0.6);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Connecting Screen -->
+    <div class="connecting-screen" id="connecting-screen">
+        <h2>CONNECTING...</h2>
+        <p id="connect-message">Joining focus session...</p>
+    </div>
+
+    <!-- Posture Alert Banner -->
+    <div class="posture-alert" id="posture-alert">
+        ⚠️ SLOUCH DETECTED — STAND UP & STRETCH! ⚠️
+    </div>
+
+    <!-- Movement Break Overlay -->
+    <div class="break-overlay" id="break-overlay">
+        <div class="break-icon">🧘</div>
+        <div class="break-title">MOVEMENT BREAK</div>
+        <div class="break-instruction" id="break-instruction">
+            Stand up and stretch your arms above your head. Hold for 5 seconds.
+        </div>
+        <div class="break-timer" id="break-timer">0:30</div>
+        <button class="break-skip" onclick="skipBreak()">SKIP →</button>
+    </div>
+
+    <!-- Breath-Based Anxiety Reset -->
+    <div class="breath-game" id="breath-game">
+        <div style="margin-bottom: 24px;">
+            <div
+                style="font-family: 'Press Start 2P', monospace; font-size: 0.55rem; color: var(--focus-secondary); letter-spacing: 2px;">
+                ANXIETY RESET</div>
+            <div style="font-size: 0.75rem; color: rgba(162,155,254,0.5); margin-top: 6px;">4-7-8 Breathing Pattern
+            </div>
+        </div>
+        <div class="breath-circle" id="breath-circle">
+            <div class="breath-phase" id="breath-phase">READY</div>
+        </div>
+        <div class="breath-counter" id="breath-counter">4</div>
+        <div class="breath-rounds" id="breath-rounds">Round 1 of 3</div>
+        <button class="break-skip" onclick="closeBreathGame()" style="margin-top: 24px;">CLOSE ✕</button>
+    </div>
+
+    <!-- Main Controller -->
+    <div class="focus-controller" id="focus-controller" style="display:none;">
+        <div class="focus-header">
+            <h1>🎓 FOCUS MODE</h1>
+            <div class="badge">STUDENT WELLNESS</div>
+        </div>
+
+        <!-- Pomodoro Timer -->
+        <div class="timer-container">
+            <svg class="timer-ring" viewBox="0 0 120 120">
+                <defs>
+                    <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#6c5ce7" />
+                        <stop offset="100%" stop-color="#00cec9" />
+                    </linearGradient>
+                </defs>
+                <circle class="timer-ring-bg" cx="60" cy="60" r="52" />
+                <circle class="timer-ring-progress" id="timer-progress" cx="60" cy="60" r="52" stroke-dasharray="326.73"
+                    stroke-dashoffset="0" />
+            </svg>
+            <div class="timer-center">
+                <div class="timer-display" id="timer-display">25:00</div>
+                <div class="timer-label" id="timer-phase-label">FOCUS TIME</div>
+            </div>
+        </div>
+
+        <!-- Phase Indicator (4 pomodoros) -->
+        <div class="phase-indicator">
+            <div class="phase-dot active" id="phase-1"></div>
+            <div class="phase-dot" id="phase-2"></div>
+            <div class="phase-dot" id="phase-3"></div>
+            <div class="phase-dot" id="phase-4"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="focus-controls">
+            <button class="focus-btn focus-btn-start" id="start-btn" onclick="toggleTimer()">▶ START</button>
+            <button class="focus-btn focus-btn-reset" onclick="resetTimer()">↻ RESET</button>
+        </div>
+
+        <!-- Anxiety Reset Button -->
+        <button class="breath-btn" onclick="startBreathGame()">🫁 Anxiety Reset</button>
+
+        <!-- Stats -->
+        <div class="focus-stats">
+            <div class="focus-stat">
+                <div class="focus-stat-value" id="stat-streak">0</div>
+                <div class="focus-stat-label">Streak</div>
+            </div>
+            <div class="focus-stat">
+                <div class="focus-stat-value" id="stat-breaks">0</div>
+                <div class="focus-stat-label">Breaks</div>
+            </div>
+            <div class="focus-stat">
+                <div class="focus-stat-value" id="stat-resets">0</div>
+                <div class="focus-stat-label">Resets</div>
+            </div>
+        </div>
+
+        <!-- Posture Status -->
+        <div class="posture-status posture-good" id="posture-status">
+            ✅ Posture: Good
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({ transports: ['polling', 'websocket'], reconnectionAttempts: 5, timeout: 10000 });
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+
+        let playerNum = null;
+        let timerSeconds = 25 * 60;
+        let timerRunning = false;
+        let timerInterval = null;
+        const TOTAL_SECONDS = 25 * 60;
+        const CIRCUMFERENCE = 2 * Math.PI * 52; // ~326.73
+        let focusStreak = 0;
+        let breaksTaken = 0;
+        let breathResets = 0;
+        let slouchCount = 0;
+        let breakActive = false;
+        let currentPomodoro = 1;
+
+        // ─── Slouch Detection via Accelerometer ───
+        let baselineGamma = null;
+        let slouchTimer = null;
+        const SLOUCH_THRESHOLD = 25; // degrees of tilt
+        const SLOUCH_DURATION = 8000; // ms of sustained slouch before alert
+
+        function initSlouchDetection() {
+            if (window.DeviceOrientationEvent) {
+                // Request permission on iOS 13+
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        }
+                    }).catch(console.error);
+                } else {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            }
+        }
+
+        function handleOrientation(e) {
+            const gamma = e.gamma || 0; // left-right tilt
+            const beta = e.beta || 0;   // front-back tilt
+
+            // Set baseline on first reading (upright phone)
+            if (baselineGamma === null) {
+                baselineGamma = beta;
+                return;
+            }
+
+            const tiltDiff = Math.abs(beta - baselineGamma);
+
+            if (tiltDiff > SLOUCH_THRESHOLD && timerRunning && !breakActive) {
+                if (!slouchTimer) {
+                    slouchTimer = setTimeout(() => {
+                        triggerSlouchAlert();
+                    }, SLOUCH_DURATION);
+                }
+                document.getElementById('posture-status').className = 'posture-status posture-bad';
+                document.getElementById('posture-status').textContent = '⚠️ Posture: Slouching';
+            } else {
+                if (slouchTimer) {
+                    clearTimeout(slouchTimer);
+                    slouchTimer = null;
+                }
+                document.getElementById('posture-status').className = 'posture-status posture-good';
+                document.getElementById('posture-status').textContent = '✅ Posture: Good';
+            }
+        }
+
+        function triggerSlouchAlert() {
+            slouchCount++;
+            document.getElementById('posture-alert').classList.add('visible');
+            socket.emit('focus-slouch', { sessionId });
+            breaksTaken++;
+            document.getElementById('stat-breaks').textContent = breaksTaken;
+
+            // Show posture alert for 3 seconds then trigger break
+            setTimeout(() => {
+                document.getElementById('posture-alert').classList.remove('visible');
+                startMovementBreak();
+            }, 3000);
+        }
+
+        // ─── Movement Break ───
+        const BREAK_EXERCISES = [
+            { icon: '🧘', text: 'Stand up and stretch your arms above your head.\nHold for 10 seconds.', duration: 30 },
+            { icon: '🏃', text: 'Do 10 jumping jacks!\nGet that blood flowing.', duration: 30 },
+            { icon: '💪', text: 'Roll your shoulders backward 10 times.\nThen forward 10 times.', duration: 25 },
+            { icon: '🦵', text: 'Touch your toes! Hold the stretch.\nBreathe deeply.', duration: 20 },
+            { icon: '👀', text: 'Look at something 20 feet away\nfor 20 seconds. Rest your eyes.', duration: 20 },
+            { icon: '🙆', text: 'Tilt your head left, hold 5 sec.\nRight, hold 5 sec. Repeat 3x.', duration: 30 },
+        ];
+
+        let breakInterval = null;
+        let breakSeconds = 0;
+
+        function startMovementBreak() {
+            breakActive = true;
+            if (timerRunning) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+            }
+
+            const exercise = BREAK_EXERCISES[Math.floor(Math.random() * BREAK_EXERCISES.length)];
+            breakSeconds = exercise.duration;
+
+            document.getElementById('break-overlay').classList.add('visible');
+            document.querySelector('.break-icon').textContent = exercise.icon;
+            document.getElementById('break-instruction').textContent = exercise.text;
+            updateBreakTimer();
+
+            breakInterval = setInterval(() => {
+                breakSeconds--;
+                updateBreakTimer();
+                if (breakSeconds <= 0) {
+                    endBreak();
+                }
+            }, 1000);
+        }
+
+        function updateBreakTimer() {
+            const m = Math.floor(breakSeconds / 60);
+            const s = breakSeconds % 60;
+            document.getElementById('break-timer').textContent = `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        function endBreak() {
+            clearInterval(breakInterval);
+            breakActive = false;
+            document.getElementById('break-overlay').classList.remove('visible');
+            socket.emit('focus-break-end', { sessionId });
+            // Resume timer
+            baselineGamma = null; // Reset posture baseline
+            toggleTimer();
+        }
+
+        function skipBreak() {
+            endBreak();
+        }
+
+        // ─── Breath-Based Anxiety Reset (4-7-8 Pattern) ───
+        let breathPhase = 'ready'; // inhale, hold, exhale
+        let breathTimer = null;
+        let breathRound = 0;
+        const MAX_BREATH_ROUNDS = 3;
+        const BREATH_PATTERN = [
+            { phase: 'inhale', label: 'BREATHE IN', duration: 4 },
+            { phase: 'hold', label: 'HOLD', duration: 7 },
+            { phase: 'exhale', label: 'BREATHE OUT', duration: 8 },
+        ];
+
+        function startBreathGame() {
+            document.getElementById('breath-game').classList.add('visible');
+            breathRound = 0;
+            runBreathRound();
+        }
+
+        function runBreathRound() {
+            breathRound++;
+            if (breathRound > MAX_BREATH_ROUNDS) {
+                completeBreathGame();
+                return;
+            }
+            document.getElementById('breath-rounds').textContent = `Round ${breathRound} of ${MAX_BREATH_ROUNDS}`;
+            runPhase(0);
+        }
+
+        function runPhase(phaseIndex) {
+            if (phaseIndex >= BREATH_PATTERN.length) {
+                runBreathRound();
+                return;
+            }
+            const p = BREATH_PATTERN[phaseIndex];
+            let count = p.duration;
+
+            const circle = document.getElementById('breath-circle');
+            circle.className = 'breath-circle ' + p.phase;
+            document.getElementById('breath-phase').textContent = p.label;
+            document.getElementById('breath-counter').textContent = count;
+
+            breathTimer = setInterval(() => {
+                count--;
+                document.getElementById('breath-counter').textContent = count;
+                if (count <= 0) {
+                    clearInterval(breathTimer);
+                    runPhase(phaseIndex + 1);
+                }
+            }, 1000);
+        }
+
+        function completeBreathGame() {
+            breathResets++;
+            document.getElementById('stat-resets').textContent = breathResets;
+            document.getElementById('breath-phase').textContent = 'COMPLETE ✨';
+            document.getElementById('breath-circle').className = 'breath-circle';
+            document.getElementById('breath-counter').textContent = '🧘';
+            document.getElementById('breath-rounds').textContent = 'Well done! You feel calmer.';
+            socket.emit('focus-breath-complete', { sessionId });
+
+            setTimeout(() => { closeBreathGame(); }, 2000);
+        }
+
+        function closeBreathGame() {
+            clearInterval(breathTimer);
+            document.getElementById('breath-game').classList.remove('visible');
+        }
+
+        // ─── Pomodoro Timer ───
+        function toggleTimer() {
+            if (timerRunning) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                document.getElementById('start-btn').textContent = '▶ START';
+            } else {
+                timerRunning = true;
+                document.getElementById('start-btn').textContent = '⏸ PAUSE';
+                timerInterval = setInterval(() => {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                    // Send streak events every 5 minutes
+                    const elapsedMin = Math.floor((TOTAL_SECONDS - timerSeconds) / 60);
+                    if (timerSeconds > 0 && (TOTAL_SECONDS - timerSeconds) % 300 === 0 && elapsedMin > 0) {
+                        focusStreak = elapsedMin;
+                        document.getElementById('stat-streak').textContent = focusStreak;
+                        socket.emit('focus-streak-event', { sessionId, playerNum, streak: focusStreak });
+                    }
+                    if (timerSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        timerRunning = false;
+                        timerComplete();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            timerSeconds = TOTAL_SECONDS;
+            document.getElementById('start-btn').textContent = '▶ START';
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timerSeconds / 60);
+            const s = timerSeconds % 60;
+            document.getElementById('timer-display').textContent =
+                `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            // Update ring progress
+            const progress = (TOTAL_SECONDS - timerSeconds) / TOTAL_SECONDS;
+            const offset = CIRCUMFERENCE * (1 - progress);
+            document.getElementById('timer-progress').style.strokeDashoffset = offset;
+
+            // Sync timer to game display
+            socket.emit('focus-timer-sync', { sessionId, remaining: timerSeconds });
+        }
+
+        function timerComplete() {
+            document.getElementById('timer-phase-label').textContent = 'COMPLETE! 🎉';
+            document.getElementById('timer-display').textContent = '00:00';
+            // Mark pomodoro phase as completed
+            document.getElementById(`phase-${currentPomodoro}`).classList.remove('active');
+            document.getElementById(`phase-${currentPomodoro}`).classList.add('completed');
+            currentPomodoro = Math.min(currentPomodoro + 1, 4);
+            if (currentPomodoro <= 4) {
+                document.getElementById(`phase-${currentPomodoro}`).classList.add('active');
+            }
+            focusStreak = 25;
+            document.getElementById('stat-streak').textContent = focusStreak;
+        }
+
+        // ─── Session Joining ───
+        if (sessionId) {
+            socket.on('connect', () => {
+                socket.emit('join-session', { sessionId }, (response) => {
+                    if (response && response.error) {
+                        document.getElementById('connect-message').textContent = response.error;
+                        return;
+                    }
+                    playerNum = response.playerNum;
+                    document.getElementById('connecting-screen').style.display = 'none';
+                    document.getElementById('focus-controller').style.display = 'flex';
+
+                    socket.emit('focus-student-join', { sessionId, playerNum });
+                    initSlouchDetection();
+                });
+            });
+        } else {
+            document.getElementById('connect-message').textContent = 'No session ID. Please scan QR code.';
+        }
+
+        socket.on('game-started', () => {
+            // Auto-start timer when host starts
+            if (!timerRunning) toggleTimer();
+        });
+
+        socket.on('focus-timer-complete', () => {
+            timerComplete();
+        });
+    </script>
+</body>
+
+</html>

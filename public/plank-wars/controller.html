@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Plank Wars — Controller</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="css/plank.css">
+    <style>
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .connecting-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--plank-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .connecting-screen h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            color: var(--plank-primary);
+            margin-bottom: 16px;
+        }
+
+        .connecting-screen p {
+            color: rgba(250, 177, 160, 0.6);
+            font-size: 0.85rem;
+        }
+
+        .plank-hint {
+            font-size: 0.8rem;
+            color: rgba(250, 177, 160, 0.5);
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        .plank-ready-btn {
+            margin-top: 20px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, var(--plank-primary), #c0392b);
+            border: none;
+            border-radius: 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.55rem;
+            color: white;
+            cursor: pointer;
+            box-shadow: var(--plank-glow);
+            letter-spacing: 1px;
+        }
+
+        .countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 10, 8, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 150;
+        }
+
+        .countdown-overlay.visible {
+            display: flex;
+        }
+
+        .countdown-number {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 5rem;
+            color: var(--plank-accent);
+            text-shadow: 0 0 60px rgba(253, 203, 110, 0.5);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(15, 10, 8, 0.9);
+            border-top: 1px solid var(--plank-border);
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+
+<body class="plank-page">
+    <!-- Connecting -->
+    <div class="connecting-screen" id="connecting-screen">
+        <h2>CONNECTING...</h2>
+        <p id="connect-message">Joining plank challenge...</p>
+    </div>
+
+    <!-- Countdown Overlay -->
+    <div class="countdown-overlay" id="countdown-overlay">
+        <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+
+    <!-- Main Controller -->
+    <div class="plank-controller" id="plank-controller" style="display:none;">
+        <div>
+            <div
+                style="font-family: 'Press Start 2P', monospace; font-size: 0.6rem; color: var(--plank-primary); letter-spacing: 2px; margin-bottom: 6px;">
+                💪 PLANK WARS</div>
+            <div
+                style="display:inline-block; padding:4px 14px; background:rgba(225,112,85,0.1); border:1px solid rgba(225,112,85,0.3); border-radius:20px; font-family:'Press Start 2P',monospace; font-size:0.4rem; color:var(--plank-secondary); letter-spacing:1px; margin-bottom:20px;">
+                BODY SENSOR</div>
+        </div>
+
+        <!-- Stability Ring -->
+        <div class="stability-ring" id="stability-ring">
+            <div class="stability-value" id="stability-value">--</div>
+            <div class="stability-label">STABILITY</div>
+        </div>
+
+        <!-- Elapsed Time -->
+        <div class="plank-elapsed" id="plank-elapsed">0:00</div>
+
+        <div class="plank-hint" id="plank-hint">
+            Place phone flat on your back while planking.<br>
+            Stay as still as possible for max score!
+        </div>
+
+        <button class="plank-ready-btn" id="ready-btn" onclick="signalReady()">IM READY</button>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div style="display:flex; align-items:center; gap:8px; color:var(--plank-secondary);">
+                <span class="status-dot connected"></span>
+                <span>Connected</span>
+            </div>
+            <span style="color:rgba(250,177,160,0.4);" id="plank-status-text">Waiting...</span>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({ transports: ['polling', 'websocket'], reconnectionAttempts: 5, timeout: 10000 });
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+
+        let playerNum = null;
+        let isPlanking = false;
+        let plankStartTime = null;
+        let plankSeconds = 0;
+        let stabilityScore = 100;
+        let sensorReady = false;
+        let challengeActive = false;
+
+        // Accelerometer data for stability
+        let accelSamples = [];
+        const SAMPLE_WINDOW = 20; // last 20 readings
+        const FLAT_THRESHOLD = 2.5; // how close to flat (m/s²)
+
+        // ─── Sensor Setup ───
+        function initSensors() {
+            if (window.DeviceMotionEvent) {
+                if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                    DeviceMotionEvent.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            window.addEventListener('devicemotion', handleMotion);
+                            sensorReady = true;
+                        }
+                    }).catch(console.error);
+                } else {
+                    window.addEventListener('devicemotion', handleMotion);
+                    sensorReady = true;
+                }
+            }
+        }
+
+        function handleMotion(e) {
+            if (!challengeActive) return;
+
+            const ag = e.accelerationIncludingGravity;
+            if (!ag) return;
+
+            // When phone is flat on back: x≈0, y≈0, z≈±9.8
+            const flatness = Math.sqrt(ag.x * ag.x + ag.y * ag.y);
+
+            accelSamples.push(flatness);
+            if (accelSamples.length > SAMPLE_WINDOW) accelSamples.shift();
+
+            // Calculate stability: how consistently flat
+            const avg = accelSamples.reduce((a, b) => a + b, 0) / accelSamples.length;
+            const variance = accelSamples.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / accelSamples.length;
+
+            // Planking = phone flat (low flatness value) and low variance
+            isPlanking = avg < FLAT_THRESHOLD && variance < 3;
+
+            // Stability: 100 when perfectly still, decreasing with movement
+            stabilityScore = Math.max(0, Math.min(100, Math.round(100 - (variance * 10) - (avg * 5))));
+
+            // Update UI
+            const ring = document.getElementById('stability-ring');
+            document.getElementById('stability-value').textContent = stabilityScore + '%';
+
+            if (isPlanking) {
+                ring.className = 'stability-ring stable';
+                document.getElementById('plank-status-text').textContent = '🔥 Planking!';
+            } else {
+                ring.className = 'stability-ring unstable';
+                document.getElementById('plank-status-text').textContent = '💤 Not planking';
+            }
+
+            // Send to server
+            socket.emit('plank-data', {
+                sessionId,
+                isPlanking,
+                stability: stabilityScore
+            });
+        }
+
+        // ─── Timer ───
+        let plankTimer = null;
+
+        function startPlankTimer() {
+            challengeActive = true;
+            plankSeconds = 0;
+            plankTimer = setInterval(() => {
+                plankSeconds++;
+                const m = Math.floor(plankSeconds / 60);
+                const s = plankSeconds % 60;
+                document.getElementById('plank-elapsed').textContent = `${m}:${String(s).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopPlankTimer() {
+            challengeActive = false;
+            clearInterval(plankTimer);
+        }
+
+        function signalReady() {
+            socket.emit('plank-player-ready', { sessionId });
+            document.getElementById('ready-btn').textContent = '✅ READY!';
+            document.getElementById('ready-btn').disabled = true;
+            document.getElementById('ready-btn').style.opacity = '0.5';
+        }
+
+        // ─── Socket Events ───
+        if (sessionId) {
+            socket.on('connect', () => {
+                socket.emit('join-session', { sessionId }, (response) => {
+                    if (response && response.error) {
+                        document.getElementById('connect-message').textContent = response.error;
+                        return;
+                    }
+                    playerNum = response.playerNum;
+                    document.getElementById('connecting-screen').style.display = 'none';
+                    document.getElementById('plank-controller').style.display = 'flex';
+                    initSensors();
+                });
+            });
+        } else {
+            document.getElementById('connect-message').textContent = 'No session ID. Please scan QR code.';
+        }
+
+        socket.on('plank-countdown', (data) => {
+            document.getElementById('countdown-overlay').classList.add('visible');
+            document.getElementById('countdown-number').textContent = data.count;
+        });
+
+        socket.on('plank-start', () => {
+            document.getElementById('countdown-overlay').classList.remove('visible');
+            document.getElementById('plank-hint').textContent = 'PLANK NOW! Stay as still as possible!';
+            startPlankTimer();
+        });
+
+        socket.on('plank-end', (data) => {
+            stopPlankTimer();
+            document.getElementById('plank-hint').textContent = 'Challenge complete! Check the scoreboard!';
+            document.getElementById('stability-ring').className = 'stability-ring';
+
+            // Find this player's ranking
+            const myRank = data.rankings.find(r => r.playerNum === playerNum);
+            if (myRank) {
+                document.getElementById('stability-value').textContent = `#${myRank.rank}`;
+                document.getElementById('plank-elapsed').textContent = `${myRank.plankTime}s plank!`;
+            }
+        });
+
+        socket.on('game-started', () => {
+            // Host started the game — sensors should already be initialized
+        });
+    </script>
+</body>
+
+</html>

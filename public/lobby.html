@@ -442,7 +442,7 @@
             'focus-mode': { title: 'FOCUS MODE', desc: '25-min Pomodoro with posture tracking' },
             'plank-wars': { title: 'PLANK WARS', desc: '60-second plank challenge!' },
             'gravity-bridge': { title: 'GRAVITY BRIDGE', desc: 'Sync your bodies to cross the bridge!' },
-            'rhythm-pulse': { title: 'RHYTHM PULSE', desc: 'Move with the beat, open the path!' },
+
             'balance-duel': { title: 'BALANCE DUEL', desc: 'Keep the crystal stable together!' }
         };
 
@@ -472,7 +472,7 @@
                 'focus-mode': { solo: '25-min Pomodoro with posture + breath', vs: 'Group focus session!' },
                 'plank-wars': { solo: 'Solo plank challenge!', vs: 'LAN plank competition!' },
                 'gravity-bridge': { solo: 'Solo bridge crossing!', vs: 'Co-op bridge crossing!' },
-                'rhythm-pulse': { solo: 'Solo rhythm mode!', vs: 'Co-op rhythm paths!' },
+
                 'balance-duel': { solo: 'Solo balance!', vs: 'Co-op crystal balance!' }
             };
             const descs = descMap[game] || { solo: 'Solo mode', vs: 'Versus mode' };
@@ -608,7 +608,7 @@
                 'focus-mode': `focus-mode/game.html?session=${sessionId}&mode=${selectedMode}`,
                 'plank-wars': `plank-wars/game.html?session=${sessionId}&mode=${selectedMode}`,
                 'gravity-bridge': `gravity-bridge/game.html?session=${sessionId}&mode=${selectedMode}`,
-                'rhythm-pulse': `rhythm-pulse/game.html?session=${sessionId}&mode=${selectedMode}`,
+
                 'balance-duel': `balance-duel/game.html?session=${sessionId}&mode=${selectedMode}`
             };
             window.location.href = gamePages[game] || `tetris.html?session=${sessionId}&mode=${selectedMode}`;

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Bridge | Motion Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Waiting Overlay -->
+    <div class="waiting-overlay" id="waiting-overlay">
+        <div class="game-emoji">🌉</div>
+        <h1>GRAVITY BRIDGE</h1>
+        <p class="subtitle" id="waiting-status">Waiting for players...</p>
+        <div class="loading-spinner"></div>
+        <p class="waiting-info">Both players scan QR with phone</p>
+    </div>
+
+    <!-- Game Canvas -->
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        const mode = params.get('mode') || '2p';
+
+        const socket = io({ transports: ['websocket', 'polling'] });
+        const canvas = document.getElementById('gameCanvas');
+        const waitingStatus = document.getElementById('waiting-status');
+        let gameStarted = false;
+        let playersConnected = 0;
+
+        // Game instance
+        const game = new GravityBridgeGame(canvas);
+
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (response) => {
+                if (response.error) {
+                    waitingStatus.innerHTML = `<span style="color:#ff4466;">❌ ${response.error}</span>`;
+                    return;
+                }
+                console.log('[GB] Rejoined session:', response);
+                if (response.state === 'playing') {
+                    startGameUI();
+                } else if (response.players && response.players.length >= 2) {
+                    waitingStatus.innerHTML = '<span style="color:#44ff88;">✅ Both players connected!</span>';
+                    setTimeout(() => startGameUI(), 1000);
+                } else if (response.players && response.players.length >= 1) {
+                    playersConnected = response.players.length;
+                    waitingStatus.innerHTML = `<span style="color:#ffdd00;">⏳ ${playersConnected}/2 players connected</span>`;
+                }
+            });
+        } else {
+            waitingStatus.innerHTML = '<span style="color:#8866cc;">No session — Demo mode (Arrow keys)</span>';
+            setTimeout(() => startGameUI(), 1500);
+        }
+
+        socket.on('player-joined', (data) => {
+            playersConnected = data.totalPlayers;
+            waitingStatus.innerHTML = `<span style="color:#ffdd00;">⏳ ${playersConnected}/2 players connected</span>`;
+            if (playersConnected >= 2) {
+                waitingStatus.innerHTML = '<span style="color:#44ff88;">✅ Both players connected!</span>';
+            }
+        });
+
+        socket.on('game-started', () => {
+            startGameUI();
+        });
+
+        // Receive movement data from controllers
+        socket.on('gb-movement', (data) => {
+            game.updatePlayerInput(data.playerNum, data.height, data.tilt);
+        });
+
+        socket.on('session-ended', (data) => {
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        function startGameUI() {
+            if (gameStarted) return;
+            gameStarted = true;
+
+            socket.emit('start-game');
+            document.getElementById('waiting-overlay').classList.add('hidden');
+            game.start();
+        }
+
+        // Keyboard fallback for testing
+        const keys = {};
+        document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+        document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+        setInterval(() => {
+            if (!gameStarted) return;
+            let h = 0.5, t = 0;
+            if (keys['ArrowUp']) h = Math.min(1, h + 0.3);
+            if (keys['ArrowDown']) h = Math.max(0, h - 0.3);
+            if (keys['ArrowLeft']) t = -0.6;
+            if (keys['ArrowRight']) t = 0.6;
+            if (keys['ArrowUp'] || keys['ArrowDown'] || keys['ArrowLeft'] || keys['ArrowRight']) {
+                game.updatePlayerInput(1, h, t);
+                game.updatePlayerInput(2, h, t); // mirror for single-keyboard testing
+            }
+        }, 66);
+    </script>
+</body>
+
+</html>

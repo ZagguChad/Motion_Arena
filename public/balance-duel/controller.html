@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Balance Duel Controller | Motion Arena</title>
+    <link rel="stylesheet" href="controller.css">
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div class="screen active" id="loadingScreen">
+        <div class="app-logo">⚖️</div>
+        <div class="app-title">BALANCE DUEL</div>
+        <div class="app-subtitle">Co-op Crystal Balance</div>
+        <p class="loader-text" id="loaderText">Connecting...</p>
+        <p class="loader-sub" id="loaderSub">Initializing sensors</p>
+        <div class="loader-bar">
+            <div class="loader-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- Waiting Screen -->
+    <div class="screen" id="waitingScreen">
+        <div class="waiting-icon">⏳</div>
+        <div class="waiting-title">WAITING FOR HOST</div>
+        <p class="waiting-sub">Keep this screen open.<br>The game will start when the host presses START.</p>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="screen" id="gameScreen">
+        <div class="game-header">
+            <span class="game-label">BALANCE DUEL</span>
+            <span class="player-badge p1" id="playerBadge">P1</span>
+        </div>
+
+        <div class="tilt-viz">
+            <div class="shard-container">
+                <div class="shard-visual" id="shardVisual"></div>
+                <div class="shard-dot" id="shardDot"></div>
+            </div>
+            <div class="tilt-values">
+                <div class="tilt-val">TILT X: <span id="tiltXVal">0°</span></div>
+                <div class="tilt-val">TILT Y: <span id="tiltYVal">0°</span></div>
+            </div>
+        </div>
+
+        <div class="crystal-section">
+            <div class="crystal-label">CRYSTAL</div>
+            <div class="crystal-status stable" id="crystalStatus">● STABLE</div>
+        </div>
+
+        <div class="instruction-text">
+            📱 Tilt phone gently — keep the crystal balanced!
+        </div>
+
+        <div class="status-bar">
+            <div class="connection-status">
+                <div class="conn-dot" id="connDot"></div>
+                <span id="connText">Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="controller.js"></script>
+</body>
+
+</html>
