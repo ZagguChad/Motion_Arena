@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Duel | Motion Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="waiting-overlay" id="waiting-overlay">
+        <div class="game-emoji">⚖️</div>
+        <h1>BALANCE DUEL</h1>
+        <p class="subtitle" id="waiting-status">Waiting for players...</p>
+        <div class="loading-spinner"></div>
+        <p class="waiting-info">Both players scan QR with phone</p>
+    </div>
+
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        const mode = params.get('mode') || '2p';
+
+        const socket = io({ transports: ['websocket', 'polling'] });
+        const canvas = document.getElementById('gameCanvas');
+        const waitingStatus = document.getElementById('waiting-status');
+        let gameStarted = false;
+        let playersConnected = 0;
+
+        const game = new BalanceDuelGame(canvas);
+
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (response) => {
+                if (response.error) {
+                    waitingStatus.innerHTML = `<span style="color:#ff4466;">❌ ${response.error}</span>`;
+                    return;
+                }
+                if (response.state === 'playing') {
+                    startGameUI();
+                } else if (response.players && response.players.length >= 2) {
+                    waitingStatus.innerHTML = '<span style="color:#44ff88;">✅ Both players connected!</span>';
+                    setTimeout(() => startGameUI(), 1000);
+                } else if (response.players) {
+                    playersConnected = response.players.length;
+                    waitingStatus.innerHTML = `<span style="color:#ffdd00;">⏳ ${playersConnected}/2 players</span>`;
+                }
+            });
+        } else {
+            waitingStatus.innerHTML = '<span style="color:#8866cc;">No session — Demo mode (Arrow keys)</span>';
+            setTimeout(() => startGameUI(), 1500);
+        }
+
+        socket.on('player-joined', (data) => {
+            playersConnected = data.totalPlayers;
+            waitingStatus.innerHTML = `<span style="color:#ffdd00;">⏳ ${playersConnected}/2 players</span>`;
+            if (playersConnected >= 2) {
+                waitingStatus.innerHTML = '<span style="color:#44ff88;">✅ Both players connected!</span>';
+            }
+        });
+
+        socket.on('game-started', () => startGameUI());
+
+        socket.on('bd-tilt', (data) => {
+            game.updatePlayerTilt(data.playerNum, data.beta, data.gamma);
+        });
+
+        socket.on('session-ended', (data) => {
+            alert(data.reason || 'Session ended');
+            window.location.href = '/';
+        });
+
+        function startGameUI() {
+            if (gameStarted) return;
+            gameStarted = true;
+            socket.emit('start-game');
+            document.getElementById('waiting-overlay').classList.add('hidden');
+            game.start();
+        }
+
+        // Keyboard fallback
+        const keys = {};
+        document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+        document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+        setInterval(() => {
+            if (!gameStarted) return;
+            let b = 0, g = 0;
+            if (keys['ArrowUp']) b = -0.4;
+            if (keys['ArrowDown']) b = 0.4;
+            if (keys['ArrowLeft']) g = -0.4;
+            if (keys['ArrowRight']) g = 0.4;
+            if (b !== 0 || g !== 0) {
+                game.updatePlayerTilt(1, b, g);
+                // P2 slightly offset for testing
+                game.updatePlayerTilt(2, b * 0.5, g * 0.5);
+            }
+        }, 66);
+    </script>
+</body>
+
+</html>

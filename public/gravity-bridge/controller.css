@@ -1,0 +1,358 @@
+/* ============================================
+   GRAVITY BRIDGE — Mobile Controller Styles
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Press+Start+2P&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
+    background: #0a0a14;
+    color: #f0f0f5;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ── Screens ────────────────────────── */
+.screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 10;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* ── Loading Screen ─────────────────── */
+.app-logo {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.app-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 3px;
+    color: #00e5ff;
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+    margin-bottom: 8px;
+}
+
+.app-subtitle {
+    font-size: 0.8rem;
+    color: #8888aa;
+    margin-bottom: 24px;
+}
+
+.loader-text {
+    font-size: 0.95rem;
+    color: #f0f0f5;
+    margin-bottom: 4px;
+}
+
+.loader-sub {
+    font-size: 0.8rem;
+    color: #8888aa;
+}
+
+.loader-bar {
+    width: 200px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    margin-top: 16px;
+    overflow: hidden;
+}
+
+.loader-bar-fill {
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(90deg, #00e5ff, #ff00e5);
+    border-radius: 2px;
+    animation: loader-slide 1.5s ease-in-out infinite;
+}
+
+/* ── Waiting Screen ─────────────────── */
+.waiting-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    animation: float 2s ease-in-out infinite;
+}
+
+.waiting-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.65rem;
+    color: #ffdd00;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+}
+
+.waiting-sub {
+    font-size: 0.85rem;
+    color: #8888aa;
+    line-height: 1.5;
+}
+
+/* ── Game Screen ────────────────────── */
+#gameScreen {
+    background: linear-gradient(180deg, #0a0a14 0%, #0d1520 100%);
+    padding: 16px;
+    gap: 12px;
+}
+
+.game-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.game-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    color: #00e5ff;
+    letter-spacing: 2px;
+}
+
+.player-badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    letter-spacing: 1px;
+}
+
+.player-badge.p1 {
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: #00e5ff;
+}
+
+.player-badge.p2 {
+    background: rgba(255, 0, 229, 0.1);
+    border: 1px solid rgba(255, 0, 229, 0.3);
+    color: #ff00e5;
+}
+
+/* Height Gauge */
+.height-section {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.height-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    color: #555570;
+    letter-spacing: 2px;
+}
+
+.height-gauge {
+    width: 60px;
+    height: 60%;
+    max-height: 300px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.height-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(0deg, rgba(0, 229, 255, 0.4), rgba(0, 229, 255, 0.1));
+    border-radius: 0 0 30px 30px;
+    transition: height 0.15s ease-out;
+}
+
+.height-marker {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: #00e5ff;
+    border-radius: 2px;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+    transition: bottom 0.15s ease-out;
+    bottom: 48%;
+}
+
+.height-value {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.7rem;
+    color: #00e5ff;
+}
+
+/* Tilt Section */
+.tilt-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.tilt-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    color: #555570;
+    letter-spacing: 2px;
+}
+
+.tilt-bar {
+    width: 80%;
+    max-width: 260px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.tilt-indicator {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    width: 30px;
+    left: calc(50% - 15px);
+    background: linear-gradient(180deg, #ff00e5, #aa00aa);
+    border-radius: 8px;
+    transition: left 0.12s ease-out;
+    box-shadow: 0 0 10px rgba(255, 0, 229, 0.5);
+}
+
+.tilt-center {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(-1px);
+}
+
+/* Sync Indicator */
+.sync-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.sync-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.35rem;
+    letter-spacing: 2px;
+}
+
+.sync-label.synced {
+    color: #00ff88;
+}
+
+.sync-label.desynced {
+    color: #ff3355;
+}
+
+/* Status Bar */
+.status-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: #8888aa;
+}
+
+.conn-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
+}
+
+.conn-dot.disconnected {
+    background: #ff3355;
+    box-shadow: 0 0 6px rgba(255, 51, 85, 0.6);
+}
+
+/* Instruction overlay */
+.instruction-text {
+    font-size: 0.85rem;
+    color: #ffdd00;
+    text-align: center;
+    line-height: 1.5;
+    padding: 12px;
+    background: rgba(255, 221, 0, 0.06);
+    border: 1px solid rgba(255, 221, 0, 0.15);
+    border-radius: 12px;
+    width: 100%;
+}
+
+/* ── Animations ─────────────────────── */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes loader-slide {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(350%);
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+    }
+}

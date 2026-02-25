@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gravity Bridge Controller | Motion Arena</title>
+    <link rel="stylesheet" href="controller.css">
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div class="screen active" id="loadingScreen">
+        <div class="app-logo">🌉</div>
+        <div class="app-title">GRAVITY BRIDGE</div>
+        <div class="app-subtitle">Co-op Platform Control</div>
+        <p class="loader-text" id="loaderText">Connecting...</p>
+        <p class="loader-sub" id="loaderSub">Initializing sensors</p>
+        <div class="loader-bar">
+            <div class="loader-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- Waiting Screen -->
+    <div class="screen" id="waitingScreen">
+        <div class="waiting-icon">⏳</div>
+        <div class="waiting-title">WAITING FOR HOST</div>
+        <p class="waiting-sub">Keep this screen open.<br>The game will start when the host presses START.</p>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="screen" id="gameScreen">
+        <div class="game-header">
+            <span class="game-label">GRAVITY BRIDGE</span>
+            <span class="player-badge p1" id="playerBadge">P1</span>
+        </div>
+
+        <div class="height-section">
+            <div class="height-label">HEIGHT</div>
+            <div class="height-gauge">
+                <div class="height-fill" id="heightFill"></div>
+                <div class="height-marker" id="heightMarker"></div>
+            </div>
+            <div class="height-value" id="heightValue">0%</div>
+        </div>
+
+        <div class="tilt-section">
+            <div class="tilt-label">TILT</div>
+            <div class="tilt-bar">
+                <div class="tilt-center"></div>
+                <div class="tilt-indicator" id="tiltIndicator"></div>
+            </div>
+        </div>
+
+        <div class="sync-section">
+            <div class="sync-label synced" id="syncLabel">● IN SYNC</div>
+        </div>
+
+        <div class="instruction-text" id="instructionText">
+            🧎 Crouch = Lower Bridge &nbsp;|&nbsp; 🧍 Stand = Raise Bridge
+        </div>
+
+        <div class="status-bar">
+            <div class="connection-status">
+                <div class="conn-dot" id="connDot"></div>
+                <span id="connText">Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="controller.js"></script>
+</body>
+
+</html>

@@ -199,7 +199,7 @@ app.get('/api/qr/:sessionId', async (req, res) => {
         'focus-mode': '/focus-mode/controller.html',
         'plank-wars': '/plank-wars/controller.html',
         'gravity-bridge': '/gravity-bridge/controller.html',
-        'rhythm-pulse': '/rhythm-pulse/controller.html',
+
         'balance-duel': '/balance-duel/controller.html'
     };
     const controllerPath = controllerMap[gameName] || '/controller.html';
@@ -509,19 +509,7 @@ function socketHandler(socket) {
         });
     });
 
-    // ═══════════════════════════════════════════════════════════
-    //  RHYTHM PULSE — Socket.IO Event Handlers
-    // ═══════════════════════════════════════════════════════════
 
-    socket.on('rp-squat', (data) => {
-        const session = sessions[socket.sessionId];
-        if (!session || session.state !== 'playing') return;
-        if (session.game !== 'rhythm-pulse') return;
-        broadcastToSession(socket.sessionId, 'rp-squat', {
-            playerNum: socket.playerNum,
-            timestamp: data.timestamp || Date.now()
-        });
-    });
 
     // ═══════════════════════════════════════════════════════════
     //  BALANCE DUEL — Socket.IO Event Handlers

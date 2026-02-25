@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Creator — Motion Arena</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        body {
+            background: #0a0a14;
+        }
+
+        .creator-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 24px;
+        }
+
+        .creator-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .creator-header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 1rem;
+            background: linear-gradient(135deg, #00e5ff, #ff00e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .creator-header .sub {
+            color: rgba(150, 150, 200, 0.5);
+            font-size: 0.85rem;
+        }
+
+        .creator-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* Preview */
+        .preview-panel {
+            background: rgba(0, 229, 255, 0.04);
+            border: 1px solid rgba(0, 229, 255, 0.12);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-panel .panel-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.45rem;
+            color: rgba(0, 229, 255, 0.6);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        #preview-canvas {
+            background: linear-gradient(180deg, #1a0f2e, #0a0a14);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.1);
+            margin-bottom: 16px;
+        }
+
+        .char-name {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            color: #00e5ff;
+            letter-spacing: 2px;
+        }
+
+        .char-power-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            margin-top: 8px;
+        }
+
+        /* Options Panel */
+        .options-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .option-group {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .option-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.4rem;
+            color: rgba(200, 200, 255, 0.5);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .option-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .option-btn {
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            background: rgba(0, 229, 255, 0.1);
+            border-color: rgba(0, 229, 255, 0.3);
+        }
+
+        .option-btn.selected {
+            background: rgba(0, 229, 255, 0.15);
+            border-color: rgba(0, 229, 255, 0.5);
+            color: #00e5ff;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .color-swatch.selected {
+            border-color: #00e5ff;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+        }
+
+        /* Power Types */
+        .power-card {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .power-card:hover {
+            background: rgba(0, 229, 255, 0.08);
+        }
+
+        .power-card.selected {
+            border-color: rgba(0, 229, 255, 0.5);
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        .power-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .power-name {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.35rem;
+            color: rgba(200, 200, 255, 0.7);
+            letter-spacing: 1px;
+        }
+
+        /* Save Button */
+        .save-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00e5ff, #0088aa);
+            border: none;
+            border-radius: 14px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            color: #0a0a14;
+            cursor: pointer;
+            letter-spacing: 2px;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 50px rgba(0, 229, 255, 0.5);
+        }
+
+        .save-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 255, 136, 0.9);
+            color: #0a0a14;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.5rem;
+            letter-spacing: 1px;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+        }
+
+        .save-toast.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .creator-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="creator-container">
+        <div class="creator-header">
+            <h1>🧍 CREATE YOUR HERO</h1>
+            <p class="sub">Customize your character for the virtual workout world</p>
+        </div>
+
+        <div class="creator-layout">
+            <!-- Preview -->
+            <div class="preview-panel">
+                <div class="panel-title">PREVIEW</div>
+                <canvas id="preview-canvas" width="300" height="350"></canvas>
+                <div class="char-name" id="char-name">HERO</div>
+                <div class="char-power-badge" id="char-power-badge"
+                    style="background:rgba(255,0,0,0.1);color:#ff6644;border:1px solid rgba(255,0,0,0.2);">💪 STRENGTH
+                </div>
+
+                <div style="display:flex; gap:8px; margin-top:12px;">
+                    <button class="option-btn" onclick="testAnim('idle')">Idle</button>
+                    <button class="option-btn" onclick="testAnim('attack')">Attack</button>
+                    <button class="option-btn" onclick="testAnim('fly')">Fly</button>
+                    <button class="option-btn" onclick="testAnim('run')">Run</button>
+                    <button class="option-btn" onclick="testAnim('shield')">Shield</button>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="options-panel">
+                <!-- Body Type -->
+                <div class="option-group">
+                    <div class="option-label">BODY TYPE</div>
+                    <div class="option-grid">
+                        <button class="option-btn selected" data-group="body" data-value="balanced"
+                            onclick="setOption(this,'bodyType')">🧍 Balanced</button>
+                        <button class="option-btn" data-group="body" data-value="slim"
+                            onclick="setOption(this,'bodyType')">🧘 Slim</button>
+                        <button class="option-btn" data-group="body" data-value="athletic"
+                            onclick="setOption(this,'bodyType')">💪 Athletic</button>
+                    </div>
+                </div>
+
+                <!-- Hair Style -->
+                <div class="option-group">
+                    <div class="option-label">HAIRSTYLE</div>
+                    <div class="option-grid">
+                        <button class="option-btn selected" data-group="hair" data-value="spiky"
+                            onclick="setOption(this,'hairStyle')">⚡ Spiky</button>
+                        <button class="option-btn" data-group="hair" data-value="short"
+                            onclick="setOption(this,'hairStyle')">✂️ Short</button>
+                        <button class="option-btn" data-group="hair" data-value="long"
+                            onclick="setOption(this,'hairStyle')">🌊 Long</button>
+                        <button class="option-btn" data-group="hair" data-value="mohawk"
+                            onclick="setOption(this,'hairStyle')">🔥 Mohawk</button>
+                        <button class="option-btn" data-group="hair" data-value="ponytail"
+                            onclick="setOption(this,'hairStyle')">🎀 Ponytail</button>
+                        <button class="option-btn" data-group="hair" data-value="bun"
+                            onclick="setOption(this,'hairStyle')">🍡 Bun</button>
+                        <button class="option-btn" data-group="hair" data-value="afro"
+                            onclick="setOption(this,'hairStyle')">🌸 Afro</button>
+                        <button class="option-btn" data-group="hair" data-value="bald"
+                            onclick="setOption(this,'hairStyle')">🌟 Bald</button>
+                    </div>
+                </div>
+
+                <!-- Hair Color -->
+                <div class="option-group">
+                    <div class="option-label">HAIR COLOR</div>
+                    <div class="option-grid">
+                        <div class="color-swatch selected" style="background:#2d1b00"
+                            onclick="setColor(this,'hairColor','#2d1b00')"></div>
+                        <div class="color-swatch" style="background:#1a1a2e"
+                            onclick="setColor(this,'hairColor','#1a1a2e')"></div>
+                        <div class="color-swatch" style="background:#c0392b"
+                            onclick="setColor(this,'hairColor','#c0392b')"></div>
+                        <div class="color-swatch" style="background:#f39c12"
+                            onclick="setColor(this,'hairColor','#f39c12')"></div>
+                        <div class="color-swatch" style="background:#8e44ad"
+                            onclick="setColor(this,'hairColor','#8e44ad')"></div>
+                        <div class="color-swatch" style="background:#2ecc71"
+                            onclick="setColor(this,'hairColor','#2ecc71')"></div>
+                        <div class="color-swatch" style="background:#e91e63"
+                            onclick="setColor(this,'hairColor','#e91e63')"></div>
+                        <div class="color-swatch" style="background:#ecf0f1"
+                            onclick="setColor(this,'hairColor','#ecf0f1')"></div>
+                    </div>
+                </div>
+
+                <!-- Outfit -->
+                <div class="option-group">
+                    <div class="option-label">OUTFIT</div>
+                    <div class="option-grid">
+                        <button class="option-btn selected" data-group="outfit" data-value="sporty"
+                            onclick="setOption(this,'outfit')">🏋️ Sporty</button>
+                        <button class="option-btn" data-group="outfit" data-value="ninja"
+                            onclick="setOption(this,'outfit')">🥷 Ninja</button>
+                        <button class="option-btn" data-group="outfit" data-value="scifi"
+                            onclick="setOption(this,'outfit')">🚀 Sci-Fi</button>
+                        <button class="option-btn" data-group="outfit" data-value="knight"
+                            onclick="setOption(this,'outfit')">⚔️ Knight</button>
+                        <button class="option-btn" data-group="outfit" data-value="casual"
+                            onclick="setOption(this,'outfit')">👕 Casual</button>
+                    </div>
+                </div>
+
+                <!-- Accessory -->
+                <div class="option-group">
+                    <div class="option-label">ACCESSORY</div>
+                    <div class="option-grid">
+                        <button class="option-btn selected" data-group="acc" data-value="none"
+                            onclick="setOption(this,'accessory')">❌ None</button>
+                        <button class="option-btn" data-group="acc" data-value="headband"
+                            onclick="setOption(this,'accessory')">🎌 Headband</button>
+                        <button class="option-btn" data-group="acc" data-value="wristband"
+                            onclick="setOption(this,'accessory')">💎 Wristband</button>
+                        <button class="option-btn" data-group="acc" data-value="cape"
+                            onclick="setOption(this,'accessory')">🦸 Cape</button>
+                    </div>
+                </div>
+
+                <!-- Power Type -->
+                <div class="option-group">
+                    <div class="option-label">POWER TYPE</div>
+                    <div class="option-grid">
+                        <div class="power-card selected" data-group="power" data-value="strength"
+                            onclick="setPower(this,'strength')">
+                            <div class="power-icon">💪</div>
+                            <div class="power-name">STRENGTH</div>
+                        </div>
+                        <div class="power-card" data-group="power" data-value="speed" onclick="setPower(this,'speed')">
+                            <div class="power-icon">⚡</div>
+                            <div class="power-name">SPEED</div>
+                        </div>
+                        <div class="power-card" data-group="power" data-value="balance"
+                            onclick="setPower(this,'balance')">
+                            <div class="power-icon">☯️</div>
+                            <div class="power-name">BALANCE</div>
+                        </div>
+                        <div class="power-card" data-group="power" data-value="endurance"
+                            onclick="setPower(this,'endurance')">
+                            <div class="power-icon">🔥</div>
+                            <div class="power-name">ENDURANCE</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save -->
+                <button class="save-btn" onclick="saveCharacter()">💾 SAVE & ENTER WORLD →</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-toast" id="save-toast">✅ CHARACTER SAVED!</div>
+
+    <script src="js/character.js"></script>
+    <script>
+        const canvas = document.getElementById('preview-canvas');
+        const renderer = new CharacterRenderer(canvas, { scale: 5, x: 150, y: 220 });
+        let animLoop;
+
+        // Load saved character
+        const saved = JSON.parse(localStorage.getItem('motion-arena-character') || 'null');
+        if (saved) {
+            renderer.setConfig(saved);
+            // Restore UI selections
+            restoreSelections(saved);
+        }
+
+        function restoreSelections(config) {
+            // Deselect all, then select matching
+            document.querySelectorAll('.option-btn[data-value]').forEach(btn => {
+                btn.classList.remove('selected');
+                if ((btn.dataset.group === 'body' && btn.dataset.value === config.bodyType) ||
+                    (btn.dataset.group === 'hair' && btn.dataset.value === config.hairStyle) ||
+                    (btn.dataset.group === 'outfit' && btn.dataset.value === config.outfit) ||
+                    (btn.dataset.group === 'acc' && btn.dataset.value === config.accessory)) {
+                    btn.classList.add('selected');
+                }
+            });
+            document.querySelectorAll('.power-card').forEach(card => {
+                card.classList.remove('selected');
+                if (card.dataset.value === config.powerType) card.classList.add('selected');
+            });
+            updatePowerBadge(config.powerType);
+        }
+
+        // Animation loop
+        function animate() {
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            renderer.update();
+            renderer.draw();
+            animLoop = requestAnimationFrame(animate);
+        }
+        animate();
+
+        function setOption(btn, prop) {
+            // Deselect siblings
+            btn.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            renderer.config[prop] = btn.dataset.value;
+        }
+
+        function setColor(swatch, prop, color) {
+            swatch.parentElement.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            swatch.classList.add('selected');
+            renderer.config[prop] = color;
+        }
+
+        function setPower(card, power) {
+            card.parentElement.querySelectorAll('.power-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            renderer.config.powerType = power;
+            updatePowerBadge(power);
+        }
+
+        function updatePowerBadge(power) {
+            const badge = document.getElementById('char-power-badge');
+            const powerConfig = {
+                strength: { icon: '💪', color: '#ff6644', bg: 'rgba(255,0,0,0.1)', border: 'rgba(255,0,0,0.2)' },
+                speed: { icon: '⚡', color: '#fdcb6e', bg: 'rgba(253,203,110,0.1)', border: 'rgba(253,203,110,0.2)' },
+                balance: { icon: '☯️', color: '#00cec9', bg: 'rgba(0,206,201,0.1)', border: 'rgba(0,206,201,0.2)' },
+                endurance: { icon: '🔥', color: '#e17055', bg: 'rgba(225,112,85,0.1)', border: 'rgba(225,112,85,0.2)' }
+            };
+            const p = powerConfig[power];
+            badge.textContent = `${p.icon} ${power.toUpperCase()}`;
+            badge.style.background = p.bg;
+            badge.style.color = p.color;
+            badge.style.border = `1px solid ${p.border}`;
+        }
+
+        function testAnim(state) {
+            renderer.setState(state);
+            if (state === 'attack') renderer.addEffect('stamina_aura');
+            if (state === 'run') renderer.addEffect('speed_boost');
+            if (state === 'fly') renderer.addEffect('agility_mode');
+        }
+
+        function saveCharacter() {
+            localStorage.setItem('motion-arena-character', JSON.stringify(renderer.config));
+            const toast = document.getElementById('save-toast');
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 2000);
+
+            // Redirect to world after brief delay
+            setTimeout(() => {
+                window.location.href = '/avatar/world.html';
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

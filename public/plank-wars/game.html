@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plank Wars — Motion Arena</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="css/plank.css">
+</head>
+
+<body class="plank-page">
+    <div class="leaderboard">
+        <div class="leaderboard-header">
+            <h1>💪 PLANK WARS</h1>
+            <p class="sub">60-Second Plank Challenge — LAN Competition</p>
+        </div>
+
+        <div class="master-timer">
+            <div class="master-timer-display" id="master-timer">60</div>
+            <div class="master-timer-label" id="timer-label">WAITING FOR PLAYERS</div>
+        </div>
+
+        <div id="player-list">
+            <div style="text-align:center; color: rgba(250,177,160,0.4); padding: 40px; font-size: 0.85rem;">
+                No players yet. Scan QR to join the plank challenge!
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-top: 30px;">
+            <button class="btn btn-start" id="start-btn" onclick="startChallenge()" style="display:none;">
+                🔥 START CHALLENGE
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div class="victory-screen" id="victory-screen">
+        <div class="victory-trophy">🏆</div>
+        <div class="victory-title">CHALLENGE COMPLETE!</div>
+        <div class="victory-winner" id="victory-winner">---</div>
+        <div class="victory-stats" id="victory-stats"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({ transports: ['polling', 'websocket'] });
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (res) => {
+                if (res && !res.error) {
+                    console.log('[Plank Wars] Rejoined session:', sessionId);
+                }
+            });
+        }
+
+        function startChallenge() {
+            socket.emit('plank-start-challenge', { sessionId });
+            document.getElementById('start-btn').style.display = 'none';
+        }
+
+        // Show start button when at least 1 player joins
+        socket.on('player-joined', (data) => {
+            document.getElementById('start-btn').style.display = 'inline-flex';
+        });
+
+        // Countdown
+        socket.on('plank-countdown', (data) => {
+            document.getElementById('master-timer').textContent = data.count;
+            document.getElementById('timer-label').textContent = 'GET READY!';
+            document.getElementById('master-timer').style.color = '#fdcb6e';
+        });
+
+        // Game started
+        socket.on('plank-start', (data) => {
+            document.getElementById('timer-label').textContent = 'PLANKING!';
+            document.getElementById('master-timer').style.color = '';
+        });
+
+        // Timer update
+        socket.on('plank-timer', (data) => {
+            document.getElementById('master-timer').textContent = data.remaining;
+        });
+
+        // Leaderboard update
+        socket.on('plank-leaderboard', (data) => {
+            renderLeaderboard(data.rankings);
+        });
+
+        // Game ended
+        socket.on('plank-end', (data) => {
+            document.getElementById('timer-label').textContent = 'FINISHED!';
+            document.getElementById('master-timer').textContent = '0';
+
+            // Show victory screen
+            if (data.rankings.length > 0) {
+                const winner = data.rankings[0];
+                document.getElementById('victory-winner').textContent =
+                    `🥇 Player ${winner.playerNum} — ${winner.plankTime}s plank!`;
+
+                document.getElementById('victory-stats').innerHTML = data.rankings.map(r => `
+                    <div class="victory-stat">
+                        <div class="victory-stat-value">${r.plankTime}s</div>
+                        <div class="victory-stat-label">Player ${r.playerNum}</div>
+                    </div>
+                `).join('');
+            }
+
+            setTimeout(() => {
+                document.getElementById('victory-screen').classList.add('visible');
+            }, 1000);
+        });
+
+        function renderLeaderboard(rankings) {
+            const container = document.getElementById('player-list');
+            if (rankings.length === 0) return;
+
+            container.innerHTML = rankings.map(r => {
+                const rankClass = r.rank === 1 ? 'gold' : r.rank === 2 ? 'silver' : r.rank === 3 ? 'bronze' : 'normal';
+                const entryClass = r.rank <= 3 ? `rank-${r.rank}` : '';
+                const statusClass = r.isPlanking ? 'planking' : 'resting';
+                const statusText = r.isPlanking ? '🔥 Planking' : '💤 Resting';
+                const barWidth = Math.min(100, (r.plankTime / 60) * 100);
+
+                return `
+                    <div class="player-entry ${entryClass}">
+                        <div class="player-rank ${rankClass}">${r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : '#' + r.rank}</div>
+                        <div class="player-info">
+                            <div class="player-name">
+                                Player ${r.playerNum}
+                                <span class="plank-status ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="player-bar-container">
+                                <div class="player-bar-fill" style="width: ${barWidth}%"></div>
+                            </div>
+                        </div>
+                        <div class="player-time">${r.plankTime}s</div>
+                        <div class="player-stability">${r.stability}% stable</div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+
+</html>

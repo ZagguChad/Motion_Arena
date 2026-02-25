@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual World — Motion Arena</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        body {
+            background: #000;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .world-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #world-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* HUD */
+        .hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-left,
+        .hud-right {
+            pointer-events: auto;
+        }
+
+        .hud-stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .hud-stat {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hud-stat-label {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 2px;
+        }
+
+        .hud-stat-value {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            color: white;
+        }
+
+        /* Theme Selector */
+        .theme-selector {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .theme-btn {
+            padding: 10px 18px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .theme-btn:hover {
+            background: rgba(0, 229, 255, 0.1);
+            border-color: rgba(0, 229, 255, 0.3);
+        }
+
+        .theme-btn.active {
+            background: rgba(0, 229, 255, 0.15);
+            border-color: rgba(0, 229, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        /* Connection Status */
+        .connection-banner {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(253, 203, 110, 0.3);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.45rem;
+            color: #fdcb6e;
+            letter-spacing: 2px;
+            z-index: 20;
+        }
+
+        /* Achievement Toast */
+        .achievement-toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.5rem;
+            color: #ffd700;
+            letter-spacing: 1px;
+            z-index: 30;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .achievement-toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* No Character Warning */
+        .no-char-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 20, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .no-char-overlay h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            color: #fdcb6e;
+            margin-bottom: 16px;
+        }
+
+        .no-char-overlay p {
+            color: rgba(200, 200, 220, 0.6);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .no-char-overlay a {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #00e5ff, #0088aa);
+            border-radius: 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.55rem;
+            color: #0a0a14;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- No Character Warning -->
+    <div class="no-char-overlay" id="no-char-overlay" style="display:none;">
+        <h2>⚠️ NO CHARACTER FOUND</h2>
+        <p>Create your hero first to enter the virtual world!</p>
+        <a href="/avatar/creator.html">🧍 CREATE CHARACTER →</a>
+    </div>
+
+    <!-- Main World -->
+    <div class="world-container" id="world-container">
+        <canvas id="world-canvas"></canvas>
+
+        <!-- HUD -->
+        <div class="hud">
+            <div class="hud-left">
+                <div class="hud-stats">
+                    <div class="hud-stat">
+                        <div class="hud-stat-label">LEVEL</div>
+                        <div class="hud-stat-value" id="hud-level">1</div>
+                    </div>
+                    <div class="hud-stat">
+                        <div class="hud-stat-label">SCORE</div>
+                        <div class="hud-stat-value" id="hud-score">0</div>
+                    </div>
+                    <div class="hud-stat">
+                        <div class="hud-stat-label">COMBO</div>
+                        <div class="hud-stat-value" id="hud-combo">0x</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-stat">
+                    <div class="hud-stat-label">ACTION</div>
+                    <div class="hud-stat-value" id="hud-action">🧍 IDLE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Banner -->
+        <div class="connection-banner" id="conn-banner">
+            📱 SCAN QR TO CONNECT PHONE CONTROLLER
+        </div>
+
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+            <button class="theme-btn active" data-theme="fantasy" onclick="switchTheme(this)">🏯 Fantasy</button>
+            <button class="theme-btn" data-theme="space" onclick="switchTheme(this)">🚀 Space</button>
+            <button class="theme-btn" data-theme="dojo" onclick="switchTheme(this)">🥋 Dojo</button>
+            <button class="theme-btn" data-theme="jungle" onclick="switchTheme(this)">🧗 Jungle</button>
+        </div>
+    </div>
+
+    <!-- Achievement Toast -->
+    <div class="achievement-toast" id="achievement-toast"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/character.js"></script>
+    <script src="js/world-engine.js"></script>
+    <script>
+        // Check for saved character
+        const charConfig = JSON.parse(localStorage.getItem('motion-arena-character') || 'null');
+        if (!charConfig) {
+            document.getElementById('no-char-overlay').style.display = 'flex';
+            document.getElementById('world-container').style.display = 'none';
+        }
+
+        // Setup canvas
+        const canvas = document.getElementById('world-canvas');
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initialize world engine
+        const world = new WorldEngine(canvas);
+        world.setTheme('fantasy');
+
+        // Initialize character
+        const charRenderer = new CharacterRenderer(canvas, { scale: 4 });
+        if (charConfig) charRenderer.setConfig(charConfig);
+
+        // Socket connection
+        const socket = io({ transports: ['polling', 'websocket'] });
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+
+        if (sessionId) {
+            socket.emit('rejoin-laptop', { sessionId }, (res) => {
+                if (res && !res.error) {
+                    document.getElementById('conn-banner').textContent = '✅ SESSION CONNECTED';
+                    document.getElementById('conn-banner').style.borderColor = 'rgba(0, 206, 201, 0.3)';
+                    document.getElementById('conn-banner').style.color = '#00cec9';
+                }
+            });
+        }
+
+        // Listen for avatar actions from controller
+        socket.on('avatar-action', (data) => {
+            const actionMap = {
+                'squat': 'attack',
+                'jump': 'fly',
+                'plank': 'shield',
+                'run': 'run',
+                'climb': 'climb',
+                'idle': 'idle'
+            };
+
+            const worldAction = data.action;
+            const charAnim = actionMap[worldAction] || 'idle';
+
+            world.setAction(worldAction);
+            charRenderer.setState(charAnim);
+
+            // Update HUD
+            const actionIcons = {
+                idle: '🧍 IDLE', squat: '⚔️ ATTACK', jump: '🦅 FLY',
+                plank: '🛡️ SHIELD', run: '🏃 RUN', climb: '🧗 CLIMB'
+            };
+            document.getElementById('hud-action').textContent = actionIcons[worldAction] || '🧍 IDLE';
+        });
+
+        // Keyboard fallback for testing
+        document.addEventListener('keydown', (e) => {
+            const keyMap = {
+                'ArrowUp': 'jump', 'w': 'jump',
+                'ArrowDown': 'squat', 's': 'squat',
+                'ArrowRight': 'run', 'd': 'run',
+                'ArrowLeft': 'plank', 'a': 'plank',
+                ' ': 'squat'
+            };
+            if (keyMap[e.key]) {
+                world.setAction(keyMap[e.key]);
+                charRenderer.setState(keyMap[e.key] === 'squat' ? 'attack' :
+                    keyMap[e.key] === 'jump' ? 'fly' :
+                        keyMap[e.key] === 'run' ? 'run' :
+                            keyMap[e.key] === 'plank' ? 'shield' : 'idle');
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            world.setAction('idle');
+            charRenderer.setState('idle');
+        });
+
+        function switchTheme(btn) {
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            world.setTheme(btn.dataset.theme);
+        }
+
+        // Main game loop
+        let lastAchievementCount = 0;
+        function gameLoop() {
+            // Resize if needed
+            if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+                resizeCanvas();
+                world.width = canvas.width;
+                world.height = canvas.height;
+            }
+
+            world.update();
+            world.render();
+
+            // Draw character on top
+            const ctx = canvas.getContext('2d');
+            charRenderer.update();
+            charRenderer.draw(canvas.width * 0.3, canvas.height - 120 + world.playerY);
+
+            // Update HUD
+            document.getElementById('hud-level').textContent = world.level;
+            document.getElementById('hud-score').textContent = Math.floor(world.score);
+            document.getElementById('hud-combo').textContent = Math.floor(world.combo) + 'x';
+
+            // Check for new achievements
+            if (world.achievements.length > lastAchievementCount) {
+                const ach = world.achievements[world.achievements.length - 1];
+                showAchievement(ach);
+                lastAchievementCount = world.achievements.length;
+
+                // Trigger character effect
+                if (ach.includes('Stamina')) charRenderer.addEffect('stamina_aura');
+                if (ach.includes('Speed')) charRenderer.addEffect('speed_boost');
+                if (ach.includes('Agility')) charRenderer.addEffect('agility_mode');
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showAchievement(text) {
+            const toast = document.getElementById('achievement-toast');
+            toast.textContent = `🏆 ${text}`;
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 3000);
+        }
+
+        // Start game loop (the world engine manages its own loop, but we overlay the character)
+        if (charConfig) {
+            // Don't call world.start() since we handle the loop ourselves
+            world.running = false; // We'll call update/render manually
+            gameLoop();
+        }
+    </script>
+</body>
+
+</html>

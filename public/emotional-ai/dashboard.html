@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotional AI — Stress Dashboard</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        body {
+            background: #0a0a14;
+        }
+
+        .eai-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .eai-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .eai-header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #e17055, #6c5ce7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .eai-header .sub {
+            color: rgba(170, 150, 220, 0.5);
+            font-size: 0.85rem;
+        }
+
+        .stress-gauge-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .stress-gauge {
+            width: 220px;
+            height: 220px;
+            position: relative;
+        }
+
+        .stress-gauge svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: rgba(108, 92, 231, 0.1);
+            stroke-width: 12;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease, stroke 0.5s;
+        }
+
+        .gauge-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .gauge-value {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .gauge-label {
+            font-size: 0.7rem;
+            color: rgba(170, 150, 220, 0.6);
+            margin-top: 4px;
+        }
+
+        .gauge-status {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.45rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            margin-top: 8px;
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        .gauge-status.calm {
+            background: rgba(0, 206, 201, 0.15);
+            color: #00cec9;
+            border: 1px solid rgba(0, 206, 201, 0.3);
+        }
+
+        .gauge-status.normal {
+            background: rgba(253, 203, 110, 0.15);
+            color: #fdcb6e;
+            border: 1px solid rgba(253, 203, 110, 0.3);
+        }
+
+        .gauge-status.stressed {
+            background: rgba(225, 112, 85, 0.15);
+            color: #e17055;
+            border: 1px solid rgba(225, 112, 85, 0.3);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: rgba(108, 92, 231, 0.06);
+            border: 1px solid rgba(108, 92, 231, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .metric-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 1.4rem;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: rgba(170, 150, 220, 0.5);
+        }
+
+        .metric-detail {
+            font-size: 0.65rem;
+            color: rgba(170, 150, 220, 0.35);
+            margin-top: 4px;
+        }
+
+        /* Stress Timeline Chart */
+        .chart-container {
+            background: rgba(108, 92, 231, 0.06);
+            border: 1px solid rgba(108, 92, 231, 0.15);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.5rem;
+            color: rgba(170, 150, 220, 0.6);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        #stress-chart {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        /* Difficulty Adjustment */
+        .difficulty-card {
+            background: rgba(108, 92, 231, 0.06);
+            border: 1px solid rgba(108, 92, 231, 0.15);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .difficulty-badge {
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            margin-top: 12px;
+        }
+
+        .difficulty-badge.easy {
+            background: rgba(0, 206, 201, 0.15);
+            color: #00cec9;
+            border: 1px solid rgba(0, 206, 201, 0.3);
+        }
+
+        .difficulty-badge.normal {
+            background: rgba(253, 203, 110, 0.15);
+            color: #fdcb6e;
+            border: 1px solid rgba(253, 203, 110, 0.3);
+        }
+
+        .difficulty-badge.hard {
+            background: rgba(225, 112, 85, 0.15);
+            color: #e17055;
+            border: 1px solid rgba(225, 112, 85, 0.3);
+        }
+
+        .difficulty-reason {
+            font-size: 0.75rem;
+            color: rgba(170, 150, 220, 0.5);
+            margin-top: 8px;
+        }
+
+        .start-monitor-btn {
+            display: block;
+            margin: 0 auto 30px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #6c5ce7, #e17055);
+            border: none;
+            border-radius: 14px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            color: white;
+            cursor: pointer;
+            letter-spacing: 2px;
+            box-shadow: 0 0 30px rgba(108, 92, 231, 0.3);
+            transition: all 0.3s;
+        }
+
+        .start-monitor-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 50px rgba(108, 92, 231, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="eai-container">
+        <div class="eai-header">
+            <h1>🧠 EMOTIONAL AI LITE</h1>
+            <p class="sub">Real-time physiological stress detection & adaptive response</p>
+        </div>
+
+        <button class="start-monitor-btn" id="start-btn" onclick="toggleMonitor()">▶ START MONITORING</button>
+
+        <!-- Stress Gauge -->
+        <div class="stress-gauge-container">
+            <div class="stress-gauge">
+                <svg viewBox="0 0 120 120">
+                    <defs>
+                        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#00cec9" />
+                            <stop offset="50%" stop-color="#fdcb6e" />
+                            <stop offset="100%" stop-color="#e17055" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="gauge-bg" cx="60" cy="60" r="50" />
+                    <circle class="gauge-fill" id="gauge-fill" cx="60" cy="60" r="50" stroke="url(#gaugeGrad)"
+                        stroke-dasharray="314.16" stroke-dashoffset="314.16" />
+                </svg>
+                <div class="gauge-center">
+                    <div class="gauge-value" id="gauge-value">--</div>
+                    <div class="gauge-label">STRESS INDEX</div>
+                    <div class="gauge-status calm" id="gauge-status">CALM</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">🫁</div>
+                <div class="metric-value" id="breath-rate">--</div>
+                <div class="metric-label">Breath Rate</div>
+                <div class="metric-detail">breaths/min</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">📊</div>
+                <div class="metric-value" id="breath-regularity">--%</div>
+                <div class="metric-label">Regularity</div>
+                <div class="metric-detail">breath consistency</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">📳</div>
+                <div class="metric-value" id="tremor-intensity">--</div>
+                <div class="metric-label">Tremor</div>
+                <div class="metric-detail">hand stability</div>
+            </div>
+        </div>
+
+        <!-- Stress Timeline -->
+        <div class="chart-container">
+            <div class="chart-title">STRESS TIMELINE</div>
+            <canvas id="stress-chart"></canvas>
+        </div>
+
+        <!-- Adaptive Difficulty -->
+        <div class="difficulty-card">
+            <div class="chart-title">ADAPTIVE GAME DIFFICULTY</div>
+            <div class="difficulty-badge normal" id="difficulty-badge">NORMAL</div>
+            <div class="difficulty-reason" id="difficulty-reason">Start monitoring to see recommendations</div>
+        </div>
+    </div>
+
+    <script src="/js/stress-monitor.js"></script>
+    <script>
+        let monitor = null;
+        let monitoring = false;
+        let chartCtx = null;
+
+        function toggleMonitor() {
+            if (monitoring) {
+                monitor.stop();
+                monitoring = false;
+                document.getElementById('start-btn').textContent = '▶ START MONITORING';
+            } else {
+                monitor = new StressMonitor({ updateInterval: 1500 });
+                monitor.onUpdate(updateDashboard);
+                monitor.start();
+                monitoring = true;
+                document.getElementById('start-btn').textContent = '⏹ STOP MONITORING';
+                initChart();
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update gauge
+            const circumference = 2 * Math.PI * 50;
+            const offset = circumference * (1 - data.stressIndex / 100);
+            document.getElementById('gauge-fill').style.strokeDashoffset = offset;
+            document.getElementById('gauge-value').textContent = data.stressIndex;
+
+            // Status
+            const statusEl = document.getElementById('gauge-status');
+            if (data.stressIndex < 30) {
+                statusEl.textContent = 'CALM';
+                statusEl.className = 'gauge-status calm';
+            } else if (data.stressIndex < 60) {
+                statusEl.textContent = 'MODERATE';
+                statusEl.className = 'gauge-status normal';
+            } else {
+                statusEl.textContent = 'STRESSED';
+                statusEl.className = 'gauge-status stressed';
+            }
+
+            // Metrics
+            document.getElementById('breath-rate').textContent = data.breathRate || '--';
+            document.getElementById('breath-regularity').textContent = data.breathRegularity + '%';
+            document.getElementById('tremor-intensity').textContent = data.tremorIntensity;
+
+            // Adaptive difficulty
+            const diff = monitor.getAdaptiveDifficulty();
+            const badge = document.getElementById('difficulty-badge');
+            badge.textContent = diff.level.toUpperCase();
+            badge.className = 'difficulty-badge ' + diff.level;
+            document.getElementById('difficulty-reason').textContent = diff.reason;
+
+            // Update chart
+            drawChart(data.history);
+
+            // Store to localStorage for Corporate Dashboard
+            const stored = JSON.parse(localStorage.getItem('motion-arena-stress') || '[]');
+            stored.push({
+                time: Date.now(),
+                stress: data.stressIndex,
+                breathRate: data.breathRate,
+                tremor: data.tremorIntensity
+            });
+            // Keep last 1000 entries
+            if (stored.length > 1000) stored.splice(0, stored.length - 1000);
+            localStorage.setItem('motion-arena-stress', JSON.stringify(stored));
+        }
+
+        function initChart() {
+            const canvas = document.getElementById('stress-chart');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+            chartCtx = canvas.getContext('2d');
+            chartCtx.scale(2, 2);
+        }
+
+        function drawChart(history) {
+            if (!chartCtx || history.length < 2) return;
+
+            const canvas = document.getElementById('stress-chart');
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+
+            chartCtx.clearRect(0, 0, w, h);
+
+            // Grid lines
+            chartCtx.strokeStyle = 'rgba(108, 92, 231, 0.1)';
+            chartCtx.lineWidth = 0.5;
+            for (let y = 0; y <= 100; y += 25) {
+                const py = h - (y / 100) * h;
+                chartCtx.beginPath();
+                chartCtx.moveTo(0, py);
+                chartCtx.lineTo(w, py);
+                chartCtx.stroke();
+            }
+
+            // Stress line
+            chartCtx.beginPath();
+            chartCtx.strokeStyle = '#6c5ce7';
+            chartCtx.lineWidth = 2;
+            chartCtx.lineJoin = 'round';
+
+            const startTime = history[0].time;
+            const endTime = history[history.length - 1].time;
+            const timeRange = endTime - startTime || 1;
+
+            history.forEach((point, i) => {
+                const x = ((point.time - startTime) / timeRange) * w;
+                const y = h - (point.stressIndex / 100) * h;
+                if (i === 0) chartCtx.moveTo(x, y);
+                else chartCtx.lineTo(x, y);
+            });
+            chartCtx.stroke();
+
+            // Fill under curve
+            chartCtx.lineTo(w, h);
+            chartCtx.lineTo(0, h);
+            chartCtx.closePath();
+            const gradient = chartCtx.createLinearGradient(0, 0, 0, h);
+            gradient.addColorStop(0, 'rgba(108, 92, 231, 0.2)');
+            gradient.addColorStop(1, 'rgba(108, 92, 231, 0)');
+            chartCtx.fillStyle = gradient;
+            chartCtx.fill();
+
+            // Tremor line (secondary)
+            chartCtx.beginPath();
+            chartCtx.strokeStyle = 'rgba(225, 112, 85, 0.5)';
+            chartCtx.lineWidth = 1;
+            history.forEach((point, i) => {
+                const x = ((point.time - startTime) / timeRange) * w;
+                const y = h - (point.tremorIntensity / 100) * h;
+                if (i === 0) chartCtx.moveTo(x, y);
+                else chartCtx.lineTo(x, y);
+            });
+            chartCtx.stroke();
+        }
+    </script>
+</body>
+
+</html>
