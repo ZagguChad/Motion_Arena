@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ Knight Dash — Gyroscope Runner</title>
+    <meta name="description" content="Jump in real life to make a knight dodge obstacles in this retro endless runner. Uses phone gyroscope/accelerometer.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ===== INTRO SCREEN ===== -->
+    <div id="intro-screen" class="screen active">
+        <div class="pixel-bg"></div>
+        <div class="intro-content">
+            <div class="game-logo">
+                <div class="logo-icon">⚔️</div>
+                <h1 class="logo-title">KNIGHT DASH</h1>
+                <p class="logo-sub">GYROSCOPE RUNNER</p>
+            </div>
+
+            <div class="knight-preview">
+                <canvas id="knight-preview-canvas" width="120" height="120"></canvas>
+            </div>
+
+            <div class="controls-info">
+                <div class="control-card gyro-card" id="gyro-status-card">
+                    <div class="control-icon">📱</div>
+                    <div class="control-text">
+                        <strong>JUMP</strong>
+                        <span id="gyro-status-text">Detecting gyroscope...</span>
+                    </div>
+                    <div class="status-led" id="gyro-led"></div>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">⌨️</div>
+                    <div class="control-text">
+                        <strong>KEYBOARD</strong>
+                        <span>SPACE / ↑ to jump</span>
+                    </div>
+                    <div class="status-led active"></div>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">🖱️</div>
+                    <div class="control-text">
+                        <strong>MOUSE/TOUCH</strong>
+                        <span>Click / Tap to jump</span>
+                    </div>
+                    <div class="status-led active"></div>
+                </div>
+            </div>
+
+            <div id="gyro-permission-section">
+                <button class="btn-gyro" id="enable-gyro-btn">
+                    📱 Enable Gyroscope Jump
+                </button>
+                <p class="gyro-hint">On mobile: tilt/shake your phone UP to jump!</p>
+            </div>
+
+            <button class="btn-start" id="start-btn">▶ START GAME</button>
+
+            <div class="high-score-display">
+                <span class="hs-label">BEST</span>
+                <span class="hs-value" id="intro-high-score">00000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== GAME SCREEN ===== -->
+    <div id="game-screen" class="screen">
+        <!-- HUD -->
+        <div class="hud">
+            <div class="hud-left">
+                <div class="hud-item">
+                    <span class="hud-label">SCORE</span>
+                    <span class="hud-value" id="score-display">00000</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">HI</span>
+                    <span class="hud-value" id="hi-score-display">00000</span>
+                </div>
+            </div>
+            <div class="hud-center">
+                <div class="speed-bar-wrapper">
+                    <span class="hud-label">SPEED</span>
+                    <div class="speed-bar" id="speed-bar"><div class="speed-fill" id="speed-fill"></div></div>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="input-indicator" id="input-indicator">
+                    <span id="input-icon">⌨️</span>
+                    <span id="input-label">KEYBOARD</span>
+                </div>
+                <div class="jump-gauge">
+                    <span class="hud-label">JUMPS</span>
+                    <div class="jump-dots" id="jump-dots">
+                        <span class="dot active"></span>
+                        <span class="dot active"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Canvas -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Pause overlay -->
+        <div id="pause-overlay" class="hidden">
+            <div class="pause-box">
+                <p class="pause-title">⏸ PAUSED</p>
+                <p class="pause-hint">Press P or click to resume</p>
+            </div>
+        </div>
+
+        <!-- Gyroscope debug indicator -->
+        <div id="gyro-debug" class="gyro-debug hidden">
+            <div class="gyro-bar-wrapper">
+                <span class="gyro-label">AY</span>
+                <div class="gyro-bar-track"><div class="gyro-bar-fill" id="gyro-bar-fill"></div></div>
+                <span class="gyro-val" id="gyro-val">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== GAME OVER SCREEN ===== -->
+    <div id="gameover-screen" class="screen">
+        <div class="gameover-content">
+            <div class="gameover-knight">💀</div>
+            <h2 class="gameover-title">GAME OVER</h2>
+
+            <div class="gameover-stats">
+                <div class="stat-row">
+                    <span class="stat-label">SCORE</span>
+                    <span class="stat-value" id="final-score">00000</span>
+                </div>
+                <div class="stat-row highlight">
+                    <span class="stat-label">BEST</span>
+                    <span class="stat-value" id="final-high">00000</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">DISTANCE</span>
+                    <span class="stat-value" id="final-dist">0m</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">OBSTACLES</span>
+                    <span class="stat-value" id="final-obs">0</span>
+                </div>
+            </div>
+
+            <div class="gameover-actions">
+                <button class="btn-restart" id="restart-btn">↺ PLAY AGAIN</button>
+                <button class="btn-menu" id="menu-btn">🏠 MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
